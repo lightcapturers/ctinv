@@ -11,8 +11,18 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
+    <!-- Mobile Menu Toggle -->
+    <button id="menuToggle" class="menu-toggle">
+        <span class="line"></span>
+        <span class="line"></span>
+        <span class="line"></span>
+    </button>
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    
     <div class="container">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="logo">
                 <h1>CT Inventory</h1>
             </div>
@@ -137,20 +147,27 @@
     <!-- Product card template -->
     <template id="productCardTemplate">
         <div class="product-card">
-            <div class="product-image">
-                <img src="" alt="Product Image">
-            </div>
-            <div class="product-info">
-                <h3 class="product-title"></h3>
-                <p class="variant-title"></p>
-                <p class="product-type"></p>
-                <p class="product-sku"></p>
+            <div class="product-header">
+                <div class="product-title"></div>
+                <div class="variant-title"></div>
+                <div class="product-meta">
+                    <span class="product-type"></span>
+                    <span class="product-sku"></span>
+                </div>
+                <div class="product-image">
+                    <img src="" alt="Product Image">
+                </div>
             </div>
             <div class="inventory-visualization">
                 <div class="location-inventory">
                     <h4>El Monte</h4>
-                    <div class="cylinder-container">
-                        <canvas class="cylinder-chart"></canvas>
+                    <div class="cylinder-container" data-location="el-monte">
+                        <div class="cylinder">
+                            <div class="cylinder-fill"></div>
+                            <div class="threshold-line"></div>
+                            <div class="stock-display"></div>
+                            <div class="stock-percentage"></div>
+                        </div>
                     </div>
                     <div class="inventory-details">
                         <p class="onhand"></p>
@@ -159,8 +176,13 @@
                 </div>
                 <div class="location-inventory">
                     <h4>Whittier</h4>
-                    <div class="cylinder-container">
-                        <canvas class="cylinder-chart"></canvas>
+                    <div class="cylinder-container" data-location="whittier">
+                        <div class="cylinder">
+                            <div class="cylinder-fill"></div>
+                            <div class="threshold-line"></div>
+                            <div class="stock-display"></div>
+                            <div class="stock-percentage"></div>
+                        </div>
                     </div>
                     <div class="inventory-details">
                         <p class="onhand"></p>
