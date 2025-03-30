@@ -99,7 +99,7 @@
             <div class="filter-container">
                 <div class="filter-row">
                     <div class="filter-group">
-                        <label for="productTypeFilter">Product Type</label>
+                        <label for="productTypeFilter">Type</label>
                         <select id="productTypeFilter" class="filter-input">
                             <option value="">All Types</option>
                         </select>
@@ -107,39 +107,38 @@
                     <div class="filter-group">
                         <label for="skuFilter">SKU</label>
                         <div class="autocomplete-container">
-                            <input type="text" id="skuFilter" class="filter-input" placeholder="Search SKUs...">
+                            <input type="text" id="skuFilter" class="filter-input" placeholder="Search SKU...">
                             <div id="skuAutocomplete" class="autocomplete-items"></div>
                         </div>
                     </div>
                     <div class="filter-group">
-                        <label for="productTitleFilter">Product Title</label>
+                        <label for="productTitleFilter">Product</label>
                         <div class="autocomplete-container">
-                            <input type="text" id="productTitleFilter" class="filter-input" placeholder="Search product titles...">
+                            <input type="text" id="productTitleFilter" class="filter-input" placeholder="Search product...">
                             <div id="productTitleAutocomplete" class="autocomplete-items"></div>
                         </div>
                     </div>
                     <div class="filter-group">
-                        <label for="stockLevelFilter">Stock Level</label>
+                        <label for="stockLevelFilter">Status</label>
                         <select id="stockLevelFilter" class="filter-input">
-                            <option value="">All Levels</option>
+                            <option value="">All Status</option>
                             <option value="low">Low Stock</option>
                             <option value="medium">Medium Stock</option>
                             <option value="high">High Stock</option>
-                            <option value="incoming">Incoming Inventory</option>
+                            <option value="incoming">Incoming</option>
                             <option value="transfer">Needs Transfer</option>
                         </select>
                     </div>
                 </div>
                 
-                <!-- Product Type Filter Pills -->
                 <div class="filter-pills-container">
                     <div class="filter-pills-label">Quick Filters:</div>
                     <div id="productTypePills" class="filter-pills"></div>
                 </div>
                 
                 <div class="filter-actions">
-                    <button id="applyFilters" class="btn btn-primary">Apply Filters</button>
-                    <button id="clearFilters" class="btn btn-secondary">Clear Filters</button>
+                    <button id="applyFilters" class="btn btn-primary">Apply</button>
+                    <button id="clearFilters" class="btn btn-secondary">Clear</button>
                 </div>
             </div>
 

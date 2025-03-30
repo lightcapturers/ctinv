@@ -984,7 +984,7 @@ const autocompleteStyles = `
     top: 100%;
     left: 0;
     right: 0;
-    max-height: 200px;
+    max-height: 180px;
     overflow-y: auto;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -995,11 +995,12 @@ const autocompleteStyles = `
 }
 
 .autocomplete-item {
-    padding: 10px;
+    padding: 6px 10px;
     cursor: pointer;
     transition: background-color 0.2s;
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
 }
 
 .autocomplete-item:last-child {
@@ -1021,13 +1022,13 @@ const autocompleteStyles = `
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
-    margin-top: 20px;
-    padding: 15px 0;
+    gap: 15px;
+    margin-top: 15px;
+    padding: 10px 0;
 }
 
 #pageInfo {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
 }
