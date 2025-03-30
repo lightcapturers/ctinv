@@ -326,7 +326,7 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         incoming = Math.max(0, incoming);
         
         // Calculate height percentages
-        const maxHeight = 1.0; // Full height of cylinder
+        const maxHeight = 1.2; // Taller cylinder
         const onHandPercent = Math.min(onHand / threshold, 1.0);
         const incomingPercent = incoming > 0 ? (incoming / threshold) : 0;
         
@@ -371,32 +371,82 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         
         // Create cylinder for base (empty/total capacity)
         const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, maxHeight, 24, 1, false);
-        const baseMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x333333, 
-            transparent: true, 
-            opacity: 0.2,
-            wireframe: false
-        });
-        const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
-        scene.add(baseCylinder);
+        
+        // Special handling for empty cylinder
+        if (onHand === 0) {
+            // Empty cylinder with light red color
+            const baseMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xFF5252,
+                transparent: true, 
+                opacity: 0.15,
+                wireframe: false
+            });
+            const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
+            scene.add(baseCylinder);
+            
+            // Add "EMPTY" indicator to the DOM
+            const parentDiv = canvas.parentElement;
+            let emptyIndicator = parentDiv.querySelector('.cylinder-empty-indicator');
+            if (!emptyIndicator) {
+                emptyIndicator = document.createElement('div');
+                emptyIndicator.className = 'cylinder-empty-indicator';
+                emptyIndicator.textContent = 'EMPTY';
+                parentDiv.appendChild(emptyIndicator);
+            }
+        } else {
+            // Normal cylinder (not empty)
+            // Remove empty indicator if it exists
+            const parentDiv = canvas.parentElement;
+            const emptyIndicator = parentDiv.querySelector('.cylinder-empty-indicator');
+            if (emptyIndicator) {
+                parentDiv.removeChild(emptyIndicator);
+            }
+            
+            const baseMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x333333, 
+                transparent: true, 
+                opacity: 0.2,
+                wireframe: false
+            });
+            const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
+            scene.add(baseCylinder);
+        }
         
         // Create cylinder for on-hand quantity
         if (onHandPercent > 0) {
             const onHandHeight = onHandPercent * maxHeight;
             const onHandGeometry = new THREE.CylinderGeometry(0.4, 0.4, onHandHeight, 24, 1, false);
-            const onHandMaterial = new THREE.MeshPhongMaterial({ 
-                color: color,
+            
+            // Create gradient material
+            const onHandMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    color1: { value: new THREE.Color(color) },
+                    color2: { value: new THREE.Color(color).offsetHSL(0, 0, 0.2) } // Slightly lighter version
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    varying vec2 vUv;
+                    void main() {
+                        gl_FragColor = vec4(mix(color1, color2, vUv.y), 0.9);
+                    }
+                `,
                 transparent: true,
                 opacity: 0.9
             });
+            
             const onHandCylinder = new THREE.Mesh(onHandGeometry, onHandMaterial);
             
             // Position from bottom
             onHandCylinder.position.y = (onHandHeight - maxHeight) / 2;
             scene.add(onHandCylinder);
-            
-            // Add text overlay for on-hand value
-            // (We'll simulate this with a line for threshold)
         }
         
         // Create threshold line
@@ -414,11 +464,31 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         if (incomingPercent > 0) {
             const incomingHeight = incomingPercent * maxHeight;
             const incomingGeometry = new THREE.CylinderGeometry(0.4, 0.4, incomingHeight, 24, 1, false);
-            const incomingMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x4169E1, // Blue
-                transparent: true,
-                opacity: 0.8
+            
+            // Create gradient material for incoming
+            const incomingMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    color1: { value: new THREE.Color(0x4169E1) }, // Blue
+                    color2: { value: new THREE.Color(0x6889E8) }  // Lighter blue
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    varying vec2 vUv;
+                    void main() {
+                        gl_FragColor = vec4(mix(color1, color2, vUv.y), 0.8);
+                    }
+                `,
+                transparent: true
             });
+            
             const incomingCylinder = new THREE.Mesh(incomingGeometry, incomingMaterial);
             
             // Position on top of on-hand cylinder or at bottom if no on-hand
@@ -467,22 +537,8 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         camera.position.set(0, 0, 2.5);
         camera.lookAt(0, 0, 0);
         
-        // Add a small animation to make it more visually appealing
-        function animate() {
-            requestAnimationFrame(animate);
-            baseCylinder.rotation.y += 0.01;
-            
-            // Get all children that are cylinders and rotate them
-            scene.children.forEach(child => {
-                if (child.geometry && child.geometry.type === 'CylinderGeometry') {
-                    child.rotation.y += 0.01;
-                }
-            });
-            
-            renderer.render(scene, camera);
-        }
-        
-        animate();
+        // Static render without animation
+        renderer.render(scene, camera);
         
         // Add numeric indicators
         addTextOverlay(canvas, onHand, threshold, incoming);

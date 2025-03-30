@@ -353,7 +353,7 @@ header {
 }
 
 .cylinder-container {
-    height: 140px;
+    height: 180px;
     position: relative;
     margin-bottom: 3px;
 }
@@ -361,6 +361,24 @@ header {
 .cylinder-chart {
     width: 100%;
     height: 100%;
+}
+
+/* Add styling for empty cylinder indicator */
+.cylinder-empty-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgba(255, 82, 82, 0.9);
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 5;
 }
 
 .inventory-details {
