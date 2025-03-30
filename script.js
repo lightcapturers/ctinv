@@ -3,7 +3,7 @@ let inventoryData = [];
 let filteredData = [];
 let uniqueProductTypes = new Set();
 let currentPage = 1;
-const itemsPerPage = 12;
+const itemsPerPage = 8; // Reduced items per page for a more compact view
 const elMonteLocationId = 'gid://shopify/Location/68455891180';
 const whittierLocationId = 'gid://shopify/Location/71820017900';
 
@@ -193,27 +193,41 @@ function renderProductCards() {
         const card = createProductCard(product);
         productGrid.appendChild(card);
     });
+
+    // Important: Wait for DOM to update before creating cylinder charts
+    requestAnimationFrame(() => {
+        document.querySelectorAll('.cylinder-chart').forEach(canvas => {
+            if (canvas.dataset.initialized !== 'true') {
+                const elMonteData = JSON.parse(canvas.dataset.elMonte || '{}');
+                const whittierData = JSON.parse(canvas.dataset.whittier || '{}');
+                
+                if (canvas.dataset.location === 'el-monte') {
+                    createCylinderChart(
+                        canvas, 
+                        elMonteData.onHand, 
+                        elMonteData.threshold,
+                        elMonteData.incoming,
+                        elMonteData.incomingDate
+                    );
+                } else if (canvas.dataset.location === 'whittier') {
+                    createCylinderChart(
+                        canvas, 
+                        whittierData.onHand, 
+                        whittierData.threshold,
+                        whittierData.incoming,
+                        whittierData.incomingDate
+                    );
+                }
+                canvas.dataset.initialized = 'true';
+            }
+        });
+    });
 }
 
 // Create a single product card
 function createProductCard(product) {
     const template = document.getElementById('productCardTemplate');
     const cardClone = template.content.cloneNode(true);
-    
-    // Set product information
-    cardClone.querySelector('.product-title').textContent = product.productTitle;
-    cardClone.querySelector('.product-type').textContent = `Type: ${product.productType}`;
-    cardClone.querySelector('.product-sku').textContent = `SKU: ${product.sku}`;
-    
-    // Set product image
-    const imgElement = cardClone.querySelector('.product-image img');
-    if (product.imageUrl) {
-        imgElement.src = product.imageUrl;
-        imgElement.alt = product.productTitle;
-    } else {
-        imgElement.src = 'https://picsum.photos/300/200';
-        imgElement.alt = 'Product image placeholder';
-    }
     
     // Get location data
     const elMonteLocation = product.locations.find(loc => loc.locationId === elMonteLocationId) || {
@@ -229,6 +243,42 @@ function createProductCard(product) {
         incoming: 0,
         incomingDate: ''
     };
+
+    // Determine card border color based on stock status
+    const card = cardClone.querySelector('.product-card');
+    let borderColor = 'border-normal';
+    
+    // If either location is low on stock
+    if ((elMonteLocation.onHand < elMonteLocation.threshold * 0.2 && elMonteLocation.threshold > 0) ||
+        (whittierLocation.onHand < whittierLocation.threshold * 0.2 && whittierLocation.threshold > 0)) {
+        borderColor = 'border-danger';
+    } 
+    // If either location has incoming stock
+    else if (elMonteLocation.incoming > 0 || whittierLocation.incoming > 0) {
+        borderColor = 'border-warning';
+    }
+    // If stock is good
+    else if (elMonteLocation.onHand >= elMonteLocation.threshold && whittierLocation.onHand >= whittierLocation.threshold) {
+        borderColor = 'border-success';
+    }
+    
+    card.classList.add(borderColor);
+    
+    // Set product information
+    cardClone.querySelector('.product-title').textContent = product.productTitle;
+    cardClone.querySelector('.variant-title').textContent = product.variantTitle;
+    cardClone.querySelector('.product-type').textContent = product.productType;
+    cardClone.querySelector('.product-sku').textContent = `SKU: ${product.sku}`;
+    
+    // Set product image
+    const imgElement = cardClone.querySelector('.product-image img');
+    if (product.imageUrl) {
+        imgElement.src = product.imageUrl;
+        imgElement.alt = product.productTitle;
+    } else {
+        imgElement.src = 'https://picsum.photos/300/200';
+        imgElement.alt = 'Product image placeholder';
+    }
     
     // Set El Monte inventory details
     const elMonteContainer = cardClone.querySelectorAll('.location-inventory')[0];
@@ -240,159 +290,248 @@ function createProductCard(product) {
     whittierContainer.querySelector('.onhand').textContent = `On Hand: ${whittierLocation.onHand}`;
     whittierContainer.querySelector('.threshold').textContent = `Threshold: ${whittierLocation.threshold}`;
     
-    // Create cylinder charts
+    // Pre-configure canvas elements with data attributes
     const elMonteCanvas = elMonteContainer.querySelector('.cylinder-chart');
-    const whittierCanvas = whittierContainer.querySelector('.cylinder-chart');
+    elMonteCanvas.dataset.location = 'el-monte';
+    elMonteCanvas.dataset.elMonte = JSON.stringify({
+        onHand: elMonteLocation.onHand,
+        threshold: elMonteLocation.threshold,
+        incoming: elMonteLocation.incoming,
+        incomingDate: elMonteLocation.incomingDate
+    });
     
-    // Initialize charts after DOM is updated
-    setTimeout(() => {
-        createCylinderChart(
-            elMonteCanvas, 
-            elMonteLocation.onHand, 
-            elMonteLocation.threshold,
-            elMonteLocation.incoming,
-            elMonteLocation.incomingDate
-        );
-        
-        createCylinderChart(
-            whittierCanvas, 
-            whittierLocation.onHand, 
-            whittierLocation.threshold,
-            whittierLocation.incoming,
-            whittierLocation.incomingDate
-        );
-    }, 0);
+    const whittierCanvas = whittierContainer.querySelector('.cylinder-chart');
+    whittierCanvas.dataset.location = 'whittier';
+    whittierCanvas.dataset.whittier = JSON.stringify({
+        onHand: whittierLocation.onHand,
+        threshold: whittierLocation.threshold,
+        incoming: whittierLocation.incoming,
+        incomingDate: whittierLocation.incomingDate
+    });
     
     return cardClone;
 }
 
 // Create a 3D cylinder visualization using Three.js
 function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDate = '') {
-    // Set positive values for calculations
-    onHand = Math.max(0, onHand);
-    threshold = Math.max(1, threshold); // Ensure threshold is at least 1
-    incoming = Math.max(0, incoming);
-    
-    // Calculate height percentages
-    const maxHeight = 1.0; // Full height of cylinder
-    const onHandPercent = Math.min(onHand / threshold, 1.0);
-    const incomingPercent = incoming > 0 ? (incoming / threshold) : 0;
-    
-    // Determine color based on stock level
-    let color;
-    if (onHandPercent < 0.2) {
-        color = 0xFF5252; // Red
-    } else if (onHandPercent < 0.5) {
-        color = 0xFFC107; // Yellow
-    } else {
-        color = 0x00C853; // Green
+    if (!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) {
+        console.error('Invalid canvas element or dimensions:', canvas);
+        return;
     }
-    
-    // Set up scene
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-    
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
-    
-    // Create cylinder for base (empty/total capacity)
-    const baseGeometry = new THREE.CylinderGeometry(0.5, 0.5, maxHeight, 32, 1, false);
-    const baseMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x333333, 
-        transparent: true, 
-        opacity: 0.3,
-        wireframe: false
-    });
-    const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
-    scene.add(baseCylinder);
-    
-    // Create cylinder for on-hand quantity
-    if (onHandPercent > 0) {
-        const onHandHeight = onHandPercent * maxHeight;
-        const onHandGeometry = new THREE.CylinderGeometry(0.5, 0.5, onHandHeight, 32, 1, false);
-        const onHandMaterial = new THREE.MeshPhongMaterial({ color: color });
-        const onHandCylinder = new THREE.Mesh(onHandGeometry, onHandMaterial);
+
+    try {
+        // Set positive values for calculations
+        onHand = Math.max(0, onHand);
+        threshold = Math.max(1, threshold); // Ensure threshold is at least 1
+        incoming = Math.max(0, incoming);
         
-        // Position from bottom
-        onHandCylinder.position.y = (onHandHeight - maxHeight) / 2;
-        scene.add(onHandCylinder);
-    }
-    
-    // Create cylinder for incoming quantity
-    if (incomingPercent > 0) {
-        const incomingHeight = incomingPercent * maxHeight;
-        const incomingGeometry = new THREE.CylinderGeometry(0.5, 0.5, incomingHeight, 32, 1, false);
-        const incomingMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x4169E1, // Blue
-            transparent: true,
-            opacity: 0.8
+        // Calculate height percentages
+        const maxHeight = 1.0; // Full height of cylinder
+        const onHandPercent = Math.min(onHand / threshold, 1.0);
+        const incomingPercent = incoming > 0 ? (incoming / threshold) : 0;
+        
+        // Determine color based on stock level
+        let color;
+        if (onHandPercent < 0.2) {
+            color = 0xFF5252; // Red
+        } else if (onHandPercent < 0.5) {
+            color = 0xFFC107; // Yellow
+        } else {
+            color = 0x00C853; // Green
+        }
+        
+        // Set up scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        
+        // Check if the canvas already has a renderer attached
+        let renderer;
+        if (canvas.renderer) {
+            renderer = canvas.renderer;
+        } else {
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas, 
+                alpha: true, 
+                antialias: true,
+                preserveDrawingBuffer: true 
+            });
+            canvas.renderer = renderer;
+        }
+        
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.setClearColor(0x000000, 0); // Transparent background
+        
+        // Add lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+        
+        // Create cylinder for base (empty/total capacity)
+        const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, maxHeight, 24, 1, false);
+        const baseMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x333333, 
+            transparent: true, 
+            opacity: 0.2,
+            wireframe: false
         });
-        const incomingCylinder = new THREE.Mesh(incomingGeometry, incomingMaterial);
+        const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
+        scene.add(baseCylinder);
         
-        // Position on top of on-hand cylinder
-        incomingCylinder.position.y = (onHandPercent * maxHeight + incomingHeight - maxHeight) / 2;
-        
-        // Add incoming metadata for tooltip
-        incomingCylinder.userData = { 
-            incoming: incoming,
-            incomingDate: incomingDate
-        };
-        
-        scene.add(incomingCylinder);
-        
-        // Add tooltip functionality
-        canvas.addEventListener('mousemove', (event) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouse = new THREE.Vector2(
-                ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1,
-                -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1
-            );
-            
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, camera);
-            
-            const intersects = raycaster.intersectObject(incomingCylinder);
-            
-            if (intersects.length > 0) {
-                showTooltip(
-                    event.clientX, 
-                    event.clientY, 
-                    `Incoming: ${incoming} (${incomingDate || 'No date'})`
-                );
-            } else {
-                hideTooltip();
-            }
-        });
-        
-        canvas.addEventListener('mouseleave', hideTooltip);
-    }
-    
-    // Position camera
-    camera.position.set(0, 0, 2.5);
-    camera.lookAt(0, 0, 0);
-    
-    // Add a small animation to make it more visually appealing
-    function animate() {
-        requestAnimationFrame(animate);
-        baseCylinder.rotation.y += 0.005;
+        // Create cylinder for on-hand quantity
         if (onHandPercent > 0) {
-            scene.children[2].rotation.y += 0.005;
+            const onHandHeight = onHandPercent * maxHeight;
+            const onHandGeometry = new THREE.CylinderGeometry(0.4, 0.4, onHandHeight, 24, 1, false);
+            const onHandMaterial = new THREE.MeshPhongMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.9
+            });
+            const onHandCylinder = new THREE.Mesh(onHandGeometry, onHandMaterial);
+            
+            // Position from bottom
+            onHandCylinder.position.y = (onHandHeight - maxHeight) / 2;
+            scene.add(onHandCylinder);
+            
+            // Add text overlay for on-hand value
+            // (We'll simulate this with a line for threshold)
         }
+        
+        // Create threshold line
+        const thresholdYPosition = 0; // Center of cylinder
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-0.6, thresholdYPosition, 0),
+            new THREE.Vector3(0.6, thresholdYPosition, 0)
+        ]);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF, opacity: 0.7, transparent: true });
+        const thresholdLine = new THREE.Line(lineGeometry, lineMaterial);
+        thresholdLine.position.z = 0.41; // Slightly in front of cylinder
+        scene.add(thresholdLine);
+        
+        // Create cylinder for incoming quantity
         if (incomingPercent > 0) {
-            scene.children[3].rotation.y += 0.005;
+            const incomingHeight = incomingPercent * maxHeight;
+            const incomingGeometry = new THREE.CylinderGeometry(0.4, 0.4, incomingHeight, 24, 1, false);
+            const incomingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x4169E1, // Blue
+                transparent: true,
+                opacity: 0.8
+            });
+            const incomingCylinder = new THREE.Mesh(incomingGeometry, incomingMaterial);
+            
+            // Position on top of on-hand cylinder or at bottom if no on-hand
+            const offsetY = onHandPercent > 0 ? 
+                onHandPercent * maxHeight + incomingHeight / 2 - maxHeight / 2 :
+                incomingHeight / 2 - maxHeight / 2;
+            
+            incomingCylinder.position.y = offsetY;
+            
+            // Add incoming metadata for tooltip
+            incomingCylinder.userData = { 
+                incoming: incoming,
+                incomingDate: incomingDate
+            };
+            
+            scene.add(incomingCylinder);
+            
+            // Add tooltip functionality
+            canvas.addEventListener('mousemove', (event) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouse = new THREE.Vector2(
+                    ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1,
+                    -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1
+                );
+                
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                
+                const intersects = raycaster.intersectObject(incomingCylinder);
+                
+                if (intersects.length > 0) {
+                    showTooltip(
+                        event.clientX, 
+                        event.clientY, 
+                        `Incoming: ${incoming} (${incomingDate || 'No date'})`
+                    );
+                } else {
+                    hideTooltip();
+                }
+            });
+            
+            canvas.addEventListener('mouseleave', hideTooltip);
         }
-        renderer.render(scene, camera);
+        
+        // Position camera
+        camera.position.set(0, 0, 2.5);
+        camera.lookAt(0, 0, 0);
+        
+        // Add a small animation to make it more visually appealing
+        function animate() {
+            requestAnimationFrame(animate);
+            baseCylinder.rotation.y += 0.01;
+            
+            // Get all children that are cylinders and rotate them
+            scene.children.forEach(child => {
+                if (child.geometry && child.geometry.type === 'CylinderGeometry') {
+                    child.rotation.y += 0.01;
+                }
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Add numeric indicators
+        addTextOverlay(canvas, onHand, threshold, incoming);
+        
+    } catch (error) {
+        console.error('Error creating cylinder chart:', error);
+    }
+}
+
+// Add text overlay for values
+function addTextOverlay(canvas, onHand, threshold, incoming) {
+    const overlayDiv = document.createElement('div');
+    overlayDiv.className = 'cylinder-overlay';
+    overlayDiv.style.position = 'absolute';
+    overlayDiv.style.top = '0';
+    overlayDiv.style.left = '0';
+    overlayDiv.style.width = '100%';
+    overlayDiv.style.height = '100%';
+    overlayDiv.style.pointerEvents = 'none';
+    overlayDiv.style.display = 'flex';
+    overlayDiv.style.flexDirection = 'column';
+    overlayDiv.style.justifyContent = 'center';
+    overlayDiv.style.alignItems = 'center';
+    overlayDiv.style.color = 'white';
+    overlayDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+    
+    // Threshold label (middle)
+    const thresholdLabel = document.createElement('div');
+    thresholdLabel.textContent = threshold;
+    thresholdLabel.style.position = 'absolute';
+    thresholdLabel.style.top = '50%';
+    thresholdLabel.style.transform = 'translateY(-50%)';
+    thresholdLabel.style.fontSize = '14px';
+    overlayDiv.appendChild(thresholdLabel);
+    
+    // On-hand label (bottom)
+    if (onHand > 0) {
+        const onHandLabel = document.createElement('div');
+        onHandLabel.textContent = onHand;
+        onHandLabel.style.position = 'absolute';
+        onHandLabel.style.bottom = '20%';
+        onHandLabel.style.fontSize = '16px';
+        onHandLabel.style.fontWeight = 'bold';
+        overlayDiv.appendChild(onHandLabel);
     }
     
-    animate();
+    // Parent container should be positioned relatively
+    canvas.parentElement.style.position = 'relative';
+    canvas.parentElement.appendChild(overlayDiv);
 }
 
 // Show tooltip
