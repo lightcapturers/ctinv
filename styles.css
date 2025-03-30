@@ -9,6 +9,7 @@
     --accent-green: #00C853;
     --accent-yellow: #FFC107;
     --accent-red: #FF5252;
+    --accent-purple: #9C27B0;
     --border-color: #383838;
     --shadow-color: rgba(0, 0, 0, 0.3);
     
@@ -16,6 +17,7 @@
     --border-success: #00C853;
     --border-warning: #FFC107;
     --border-danger: #FF5252;
+    --border-transfer: #9C27B0;
     --border-normal: #3d3d3d;
     
     /* Cylinder colors */
@@ -212,6 +214,11 @@ header {
 .metric-icon.low-stock {
     background-color: rgba(255, 82, 82, 0.2);
     color: var(--accent-red);
+}
+
+.metric-icon.transfers {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: var(--accent-purple);
 }
 
 .metric-content h3 {
@@ -438,6 +445,10 @@ header {
     border-left: 3px solid var(--border-danger);
 }
 
+.product-card.border-transfer::before {
+    border-left: 3px solid var(--border-transfer);
+}
+
 .product-header {
     margin-bottom: 20px;
 }
@@ -466,6 +477,7 @@ header {
 .product-meta {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
     margin-bottom: 15px;
     font-size: 13px;
@@ -1263,4 +1275,39 @@ main {
 .cylinder-incoming .cylinder-value {
     top: 50%;
     transform: translateY(-50%);
+}
+
+/* Add a new border color for transfer cards */
+.product-card.border-transfer::before {
+    border-left: 3px solid var(--border-transfer);
+}
+
+/* Update transfer badge styling */
+.transfer-badge {
+    background-color: rgba(156, 39, 176, 0.2);
+    border: 1px solid rgba(156, 39, 176, 0.4);
+    color: var(--accent-purple);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.transfer-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Update product-meta to support the badge */
+.product-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 13px;
 } 

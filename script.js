@@ -408,6 +408,15 @@ function updateMetrics() {
         });
     });
     document.getElementById('lowStockCount').textContent = lowStockCount;
+    
+    // Calculate count of products that need transfers
+    let transferCount = 0;
+    inventoryData.forEach(product => {
+        if (needsTransfer(product)) {
+            transferCount++;
+        }
+    });
+    document.getElementById('transferCount').textContent = transferCount;
 }
 
 // Render product cards based on filtered data
@@ -450,6 +459,50 @@ function formatDate(dateStr) {
     } catch (e) {
         return dateStr;
     }
+}
+
+// Function to check if product needs a transfer
+function needsTransfer(product) {
+    const elMonteLocation = product.locations.find(loc => loc.locationId === elMonteLocationId);
+    const whittierLocation = product.locations.find(loc => loc.locationId === whittierLocationId);
+    
+    // Both locations must exist
+    if (!elMonteLocation || !whittierLocation) {
+        return false;
+    }
+    
+    // If Whittier threshold is zero, no transfer is needed
+    if (whittierLocation.threshold <= 0) {
+        return false;
+    }
+    
+    // Whittier must be below or near its threshold
+    const whittierNeedsStock = whittierLocation.onHand <= whittierLocation.threshold;
+    
+    // El Monte must have enough to cover both thresholds plus extra
+    const elMonteHasExcess = elMonteLocation.onHand > (elMonteLocation.threshold + whittierLocation.threshold);
+    
+    // Return true if both conditions are met
+    return whittierNeedsStock && elMonteHasExcess;
+}
+
+// Calculate recommended transfer amount
+function calculateTransferAmount(product) {
+    const elMonteLocation = product.locations.find(loc => loc.locationId === elMonteLocationId);
+    const whittierLocation = product.locations.find(loc => loc.locationId === whittierLocationId);
+    
+    if (!elMonteLocation || !whittierLocation) {
+        return 0;
+    }
+    
+    // How much Whittier needs to reach threshold
+    const whittierNeeds = Math.max(0, whittierLocation.threshold - whittierLocation.onHand);
+    
+    // How much El Monte can spare while keeping its own threshold plus a 20% buffer
+    const elMonteSpare = Math.max(0, elMonteLocation.onHand - Math.ceil(elMonteLocation.threshold * 1.2));
+    
+    // Return the smaller of the two values
+    return Math.min(whittierNeeds, elMonteSpare);
 }
 
 // Create product card
@@ -505,9 +558,14 @@ function createProductCard(product) {
         incomingText.textContent = `${totalIncoming} units arriving ${formatDate(incomingDate)}`;
     }
     
+    // Check if product needs transfer
+    const requiresTransfer = needsTransfer(product);
+    
     // Determine overall status for card border
     let cardStatus = 'normal';
-    if (elMonteLocation && whittierLocation) {
+    if (requiresTransfer) {
+        cardStatus = 'transfer';
+    } else if (elMonteLocation && whittierLocation) {
         const elMonteRatio = elMonteLocation.onHand / Math.max(1, elMonteLocation.threshold);
         const whittierRatio = whittierLocation.onHand / Math.max(1, whittierLocation.threshold);
         
@@ -523,6 +581,24 @@ function createProductCard(product) {
     // Set card border status
     const card = productCard.querySelector('.product-card');
     card.classList.add(`border-${cardStatus}`);
+    
+    // Add transfer badge if needed
+    if (requiresTransfer) {
+        const transferAmount = calculateTransferAmount(product);
+        const transferBadge = document.createElement('div');
+        transferBadge.className = 'transfer-badge';
+        transferBadge.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3v6m0 0V3m0 6h6m0 0h-6"/>
+                <path d="M7 21v-6m0 0v6m0-6H1m0 0h6"/>
+                <path d="M17 3h.01M7 21h.01M7 3h.01M17 21h.01M22 3h.01M2 21h.01M2 3h.01M22 21h.01"/>
+                <path d="m19 7-6 5-2-2-6 5"/>
+            </svg>
+            Transfer ${transferAmount}
+        `;
+        // Add the badge to the product-meta section instead of the card
+        productCard.querySelector('.product-meta').appendChild(transferBadge);
+    }
     
     // Setup El Monte inventory
     if (elMonteLocation) {
@@ -808,6 +884,11 @@ function applyFilters() {
         if (stockLevel) {
             const elMonteLocation = product.locations.find(loc => loc.locationId === elMonteLocationId);
             const whittierLocation = product.locations.find(loc => loc.locationId === whittierLocationId);
+            
+            // For transfer needed filter
+            if (stockLevel === 'transfer') {
+                return needsTransfer(product);
+            }
             
             // For incoming inventory filter
             if (stockLevel === 'incoming') {
