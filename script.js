@@ -6,11 +6,12 @@ let currentPage = 1;
 const itemsPerPage = 8; // Reduced items per page for a more compact view
 const elMonteLocationId = 'gid://shopify/Location/68455891180';
 const whittierLocationId = 'gid://shopify/Location/71820017900';
+const API_ENDPOINT = '/api/inventory'; // Endpoint to fetch data from server
 
 // Document ready function
 document.addEventListener('DOMContentLoaded', () => {
-    // Load data from CSV
-    loadCSVData();
+    // Load data from API endpoint that will provide Google Sheets data
+    loadInventoryData();
 
     // Add event listeners
     document.getElementById('refreshData').addEventListener('click', refreshData);
@@ -20,49 +21,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nextPage').addEventListener('click', () => navigatePage(1));
 });
 
-// Load CSV data
-async function loadCSVData() {
+// Load inventory data from API
+async function loadInventoryData() {
     try {
-        const response = await fetch('sample_inventory.csv');
-        const csvText = await response.text();
+        // Show loading indicator
+        document.getElementById('productGrid').innerHTML = '<div class="loading">Loading inventory data...</div>';
         
-        // Parse CSV
-        const data = parseCSV(csvText);
+        const response = await fetch(API_ENDPOINT);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
         processData(data);
         
         // Initialize the dashboard
         updateDashboard();
         
-        console.log('Data loaded successfully');
+        console.log('Data loaded successfully from Google Sheets');
     } catch (error) {
-        console.error('Error loading CSV data:', error);
+        console.error('Error loading inventory data:', error);
+        document.getElementById('productGrid').innerHTML = 
+            `<div class="error-message">Error loading data. Please try again later.<br>${error.message}</div>`;
     }
 }
 
-// Parse CSV text into array of objects
-function parseCSV(csvText) {
-    const lines = csvText.split('\n');
-    const headers = lines[0].split(',');
-    
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        
-        const values = lines[i].split(',');
-        const entry = {};
-        
-        for (let j = 0; j < headers.length; j++) {
-            entry[headers[j]] = values[j];
-        }
-        
-        data.push(entry);
-    }
-    
-    return data;
-}
-
-// Process and organize the data
+// Process and organize the data from API
 function processData(data) {
     // Group data by product and variant
     const productMap = new Map();
@@ -653,7 +638,7 @@ function refreshData() {
     
     // Reload data
     setTimeout(() => {
-        loadCSVData().then(() => {
+        loadInventoryData().then(() => {
             refreshBtn.disabled = false;
             refreshBtn.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>

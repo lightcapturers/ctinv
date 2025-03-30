@@ -7,8 +7,10 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "googleapis": "^148.0.0"
+  },
   "engines": {
     "node": ">=14.0.0"
   }
-} 
+}
