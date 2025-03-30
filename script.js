@@ -809,6 +809,14 @@ function applyFilters() {
             const elMonteLocation = product.locations.find(loc => loc.locationId === elMonteLocationId);
             const whittierLocation = product.locations.find(loc => loc.locationId === whittierLocationId);
             
+            // For incoming inventory filter
+            if (stockLevel === 'incoming') {
+                const hasIncoming = product.locations.some(loc => 
+                    loc.incoming && loc.incoming > 0
+                );
+                return hasIncoming;
+            }
+            
             const elMonteRatio = elMonteLocation ? elMonteLocation.onHand / Math.max(1, elMonteLocation.threshold) : 0;
             const whittierRatio = whittierLocation ? whittierLocation.onHand / Math.max(1, whittierLocation.threshold) : 0;
             
@@ -825,8 +833,6 @@ function applyFilters() {
         return true;
     });
     
-    // No longer reset to first page
-    // currentPage = 1;
     updateDashboard();
 }
 

@@ -225,12 +225,12 @@ header {
     font-weight: 700;
 }
 
-/* Filter Container Styles */
+/* Filter Container Styles - Improved */
 .filter-container {
     background-color: var(--background-card);
     border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 30px;
+    padding: 16px;
+    margin-bottom: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -238,8 +238,8 @@ header {
 .filter-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
 .filter-group {
@@ -248,21 +248,22 @@ header {
 }
 
 .filter-group label {
-    margin-bottom: 8px;
-    font-size: 14px;
+    margin-bottom: 6px;
+    font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
 }
 
 .filter-input {
-    padding: 12px;
-    border-radius: 8px;
+    padding: 10px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
     background-color: var(--background-dark);
     color: var(--text-primary);
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.3s ease;
+    height: 38px;
 }
 
 .filter-input:focus {
@@ -275,37 +276,40 @@ header {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    margin-top: 12px;
 }
 
-/* Filter Pills Styles */
+/* Filter Pills Styles - Improved */
 .filter-pills-container {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    margin-bottom: 15px;
-    padding-top: 15px;
-    border-top: 1px solid var(--border-color);
+    margin-bottom: 0;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .filter-pills-label {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
     margin-right: 10px;
-    padding: 5px 0;
+    padding: 0;
     font-weight: 500;
 }
 
 .filter-pills {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
 }
 
 .filter-pill {
-    padding: 5px 12px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 16px;
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    cursor: pointer;
 }
 
 .filter-pill:hover {
@@ -316,12 +320,14 @@ header {
 .filter-pill.active {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(65, 105, 225, 0.3);
+    background-color: rgba(65, 105, 225, 0.2);
+    border-color: var(--accent-blue);
 }
 
-/* Button styling */
+/* Button styling - Compact */
 .btn {
-    padding: 10px 16px;
-    border-radius: 8px;
+    padding: 8px 14px;
+    border-radius: 6px;
     font-weight: 500;
     cursor: pointer;
     display: inline-flex;
@@ -330,9 +336,10 @@ header {
     transition: all 0.3s ease;
     border: none;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     position: relative;
     overflow: hidden;
+    height: 36px;
 }
 
 .btn::after {
@@ -761,6 +768,11 @@ header {
     
     .filter-row {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .filter-container {
+        padding: 14px;
     }
     
     /* Adjust padding and margins for smaller screens */
@@ -888,6 +900,7 @@ header {
     /* Make filter group full width */
     .filter-row {
         grid-template-columns: 1fr;
+        gap: 8px;
     }
     
     /* Single column for metrics */
@@ -908,6 +921,23 @@ header {
     .product-meta {
         flex-wrap: wrap;
         gap: 5px;
+    }
+    
+    .filter-container {
+        padding: 12px;
+    }
+    
+    .filter-group {
+        margin-bottom: 4px;
+    }
+    
+    .filter-group label {
+        margin-bottom: 4px;
+    }
+    
+    .filter-pills-container {
+        padding-top: 10px;
+        margin-top: 4px;
     }
 }
 
