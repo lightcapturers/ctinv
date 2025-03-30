@@ -370,28 +370,25 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         scene.add(directionalLight);
         
         // Create cylinder for base (empty/total capacity)
-        const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, maxHeight, 24, 1, false);
+        const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, maxHeight, 32, 1, false);
         
         // Special handling for empty cylinder
         if (onHand === 0) {
-            // Empty cylinder with light red color
+            // Empty cylinder with light red color (no EMPTY text)
             const baseMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0xFF5252,
                 transparent: true, 
-                opacity: 0.15,
+                opacity: 0.2,
                 wireframe: false
             });
             const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
             scene.add(baseCylinder);
             
-            // Add "EMPTY" indicator to the DOM
+            // Remove any existing empty indicator
             const parentDiv = canvas.parentElement;
-            let emptyIndicator = parentDiv.querySelector('.cylinder-empty-indicator');
-            if (!emptyIndicator) {
-                emptyIndicator = document.createElement('div');
-                emptyIndicator.className = 'cylinder-empty-indicator';
-                emptyIndicator.textContent = 'EMPTY';
-                parentDiv.appendChild(emptyIndicator);
+            const emptyIndicator = parentDiv.querySelector('.cylinder-empty-indicator');
+            if (emptyIndicator) {
+                parentDiv.removeChild(emptyIndicator);
             }
         } else {
             // Normal cylinder (not empty)
@@ -405,7 +402,7 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
             const baseMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0x333333, 
                 transparent: true, 
-                opacity: 0.2,
+                opacity: 0.15,
                 wireframe: false
             });
             const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
@@ -415,31 +412,14 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         // Create cylinder for on-hand quantity
         if (onHandPercent > 0) {
             const onHandHeight = onHandPercent * maxHeight;
-            const onHandGeometry = new THREE.CylinderGeometry(0.4, 0.4, onHandHeight, 24, 1, false);
+            const onHandGeometry = new THREE.CylinderGeometry(0.4, 0.4, onHandHeight, 32, 1, false);
             
-            // Create gradient material
-            const onHandMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    color1: { value: new THREE.Color(color) },
-                    color2: { value: new THREE.Color(color).offsetHSL(0, 0, 0.2) } // Slightly lighter version
-                },
-                vertexShader: `
-                    varying vec2 vUv;
-                    void main() {
-                        vUv = uv;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 color1;
-                    uniform vec3 color2;
-                    varying vec2 vUv;
-                    void main() {
-                        gl_FragColor = vec4(mix(color1, color2, vUv.y), 0.9);
-                    }
-                `,
+            // Use a solid color with PhongMaterial instead of ShaderMaterial for better appearance
+            const onHandMaterial = new THREE.MeshPhongMaterial({ 
+                color: color,
                 transparent: true,
-                opacity: 0.9
+                opacity: 0.9,
+                shininess: 30
             });
             
             const onHandCylinder = new THREE.Mesh(onHandGeometry, onHandMaterial);
@@ -452,10 +432,10 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         // Create threshold line
         const thresholdYPosition = 0; // Center of cylinder
         const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-0.6, thresholdYPosition, 0),
-            new THREE.Vector3(0.6, thresholdYPosition, 0)
+            new THREE.Vector3(-0.5, thresholdYPosition, 0),
+            new THREE.Vector3(0.5, thresholdYPosition, 0)
         ]);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF, opacity: 0.7, transparent: true });
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF, opacity: 0.7, transparent: true, linewidth: 2 });
         const thresholdLine = new THREE.Line(lineGeometry, lineMaterial);
         thresholdLine.position.z = 0.41; // Slightly in front of cylinder
         scene.add(thresholdLine);
@@ -463,30 +443,14 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
         // Create cylinder for incoming quantity
         if (incomingPercent > 0) {
             const incomingHeight = incomingPercent * maxHeight;
-            const incomingGeometry = new THREE.CylinderGeometry(0.4, 0.4, incomingHeight, 24, 1, false);
+            const incomingGeometry = new THREE.CylinderGeometry(0.4, 0.4, incomingHeight, 32, 1, false);
             
-            // Create gradient material for incoming
-            const incomingMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    color1: { value: new THREE.Color(0x4169E1) }, // Blue
-                    color2: { value: new THREE.Color(0x6889E8) }  // Lighter blue
-                },
-                vertexShader: `
-                    varying vec2 vUv;
-                    void main() {
-                        vUv = uv;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 color1;
-                    uniform vec3 color2;
-                    varying vec2 vUv;
-                    void main() {
-                        gl_FragColor = vec4(mix(color1, color2, vUv.y), 0.8);
-                    }
-                `,
-                transparent: true
+            // Use solid material for incoming cylinder as well
+            const incomingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x4169E1, // Blue
+                transparent: true,
+                opacity: 0.8,
+                shininess: 30
             });
             
             const incomingCylinder = new THREE.Mesh(incomingGeometry, incomingMaterial);
@@ -532,6 +496,9 @@ function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDa
             
             canvas.addEventListener('mouseleave', hideTooltip);
         }
+        
+        // Add a slight rotation for better 3D perspective
+        scene.rotation.y = 0.2;
         
         // Position camera
         camera.position.set(0, 0, 2.5);
