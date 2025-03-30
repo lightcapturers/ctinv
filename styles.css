@@ -48,71 +48,15 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
-    width: 250px;
-    background-color: var(--background-sidebar);
-    padding: 20px 0;
-    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3);
-    position: fixed;
-    height: 100vh;
-    overflow-y: auto;
-    z-index: 10;
-}
-
-.logo {
-    padding: 0 20px 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.logo h1 {
-    font-size: 24px;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-nav ul {
-    list-style: none;
-    padding: 20px 0;
-}
-
-nav ul li {
-    padding: 12px 20px;
-    margin-bottom: 5px;
-    transition: all 0.3s ease;
-    border-radius: 0 8px 8px 0;
-}
-
-nav ul li.active {
-    background-color: var(--accent-blue);
-    box-shadow: 0 4px 12px rgba(65, 105, 225, 0.3);
-}
-
-nav ul li:hover:not(.active) {
-    background-color: rgba(65, 105, 225, 0.2);
-}
-
-nav ul li a {
-    color: var(--text-primary);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-}
-
-nav ul li a svg {
-    margin-right: 12px;
+    display: none;
 }
 
 /* Main Content Styles */
 main {
-    flex: 1;
-    padding: 30px;
-    margin-left: 250px;
-    width: calc(100% - 250px);
+    margin-left: 0;
+    width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    padding: 20px;
 }
 
 header {
@@ -387,18 +331,18 @@ select.filter-input {
 /* Product Grid Styles */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
-/* Product Card Styles - Improved */
+/* Product Card Styles - More Compact */
 .product-card {
     background-color: var(--background-card);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
     position: relative;
     border-left: 3px solid var(--border-normal);
@@ -442,14 +386,14 @@ select.filter-input {
 }
 
 .product-header {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .product-title {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
@@ -457,9 +401,9 @@ select.filter-input {
 }
 
 .variant-title {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-secondary);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
@@ -470,14 +414,14 @@ select.filter-input {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    font-size: 13px;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 11px;
 }
 
 .product-type, .product-sku {
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 3px 8px;
+    border-radius: 4px;
     background-color: rgba(255, 255, 255, 0.08);
     color: var(--text-secondary);
     font-weight: 500;
@@ -485,10 +429,10 @@ select.filter-input {
 
 .product-image {
     width: 100%;
-    height: 120px;
+    height: 90px;
     overflow: hidden;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    border-radius: 6px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -524,11 +468,11 @@ select.filter-input {
     opacity: 1;
 }
 
-/* Inventory Visualization - Improved */
+/* Inventory Visualization - Optimized */
 .inventory-visualization {
     display: flex;
     justify-content: space-between;
-    gap: 15px;
+    gap: 8px;
     margin-top: auto;
 }
 
@@ -541,19 +485,19 @@ select.filter-input {
 }
 
 .location-inventory h4 {
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text-primary);
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     font-weight: 600;
     text-align: center;
 }
 
-/* Cylinder Container - Completely Revamped */
+/* Cylinder Container - Thinner and More Efficient */
 .cylinder-container {
     position: relative;
-    width: 90px;
-    height: 140px;
-    margin: 0 auto 10px;
+    width: 65px;
+    height: 110px;
+    margin: 0 auto 8px;
     perspective: 1000px;
 }
 
@@ -564,248 +508,132 @@ select.filter-input {
     transform-style: preserve-3d;
 }
 
-/* New 3D cylinder design */
-.cylinder-fill {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 0%; /* Will be set dynamically */
-    background: linear-gradient(to bottom, rgba(66, 165, 245, 0.8), rgba(66, 165, 245, 0.6));
-    border-radius: 8px 8px 0 0;
-    transition: height 0.5s ease, background 0.3s ease;
-    z-index: 1;
-    box-shadow: 0 0 10px rgba(66, 165, 245, 0.4) inset;
-}
-
-/* Top cap of cylinder */
-.cylinder::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 10px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 8px 8px 0 0;
-    z-index: 3;
-}
-
-/* Bottom cap of cylinder */
-.cylinder::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(80, 80, 80, 0.2), rgba(60, 60, 60, 0.1));
-    border-radius: 8px;
-    z-index: 0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Container for the threshold line */
+/* Threshold line - compact and stacked to the left */
 .threshold-line {
     position: absolute;
-    left: -5px;
-    width: 110%;
-    height: 2px;
+    left: -1px;
+    width: 102%;
+    height: 1px;
     background-color: rgba(255, 255, 255, 0.5);
     z-index: 4;
-    transform: translateY(1px);
 }
 
-/* Add "Threshold" label */
+/* Stack threshold label vertically to the left */
 .threshold-line::before {
     content: "Threshold";
     position: absolute;
-    right: 110%;
-    top: -10px;
-    font-size: 10px;
+    left: -15px;
+    top: -12px;
+    font-size: 8px;
     color: var(--text-secondary);
     white-space: nowrap;
+    transform: rotate(-90deg);
+    transform-origin: bottom left;
 }
 
-.cylinder-fill.low {
-    background: linear-gradient(to bottom, rgba(255, 82, 82, 0.8), rgba(255, 82, 82, 0.6));
-    box-shadow: 0 0 10px rgba(255, 82, 82, 0.4) inset;
-}
-
-.cylinder-fill.medium {
-    background: linear-gradient(to bottom, rgba(255, 193, 7, 0.8), rgba(255, 193, 7, 0.6));
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.4) inset;
-}
-
-.cylinder-fill.good {
-    background: linear-gradient(to bottom, rgba(0, 200, 83, 0.8), rgba(0, 200, 83, 0.6));
-    box-shadow: 0 0 10px rgba(0, 200, 83, 0.4) inset;
-}
-
-.cylinder-fill.empty {
-    height: 100% !important;
-    background: rgba(255, 82, 82, 0.15);
-    box-shadow: inset 0 0 10px rgba(255, 82, 82, 0.1);
-    border-radius: 8px;
-}
-
-/* Stock Display - Improved Positioning */
-.stock-display {
-    position: absolute;
-    font-size: 16px;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    z-index: 5;
-    width: 100%;
-    text-align: center;
-    padding: 0;
-}
-
-/* Stock Percentage - Improved Positioning */
+/* Hide percentage display */
 .stock-percentage {
-    position: absolute;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    z-index: 5;
-    width: 100%;
-    text-align: center;
-    top: 100%;
-    margin-top: 5px;
+    display: none;
 }
 
-/* Incoming Indicator - Improved */
-.incoming-indicator {
+/* Improve cylinder value positioning to ensure proper centering */
+.cylinder-value {
     position: absolute;
-    top: -10px;
-    right: -10px;
-    background-color: var(--accent-blue);
+    left: 50%;
+    transform: translateX(-50%);
     color: white;
-    font-size: 11px;
     font-weight: 700;
-    min-width: 24px;
-    height: 24px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 14px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     z-index: 10;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    padding: 0 5px;
+    width: auto;
+    height: auto;
+    text-align: center;
+    padding: 2px 4px;
+    line-height: 1;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    pointer-events: none;
 }
 
-/* Inventory Details - Improved */
+/* Styles for incoming value */
+.cylinder-value.incoming-value {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Inventory details */
 .inventory-details {
     display: flex;
     justify-content: center;
-    gap: 15px;
-    margin-top: 10px;
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 3px;
+    font-size: 10px;
 }
 
 .inventory-details p {
-    font-size: 13px;
+    margin: 0;
     color: var(--text-secondary);
 }
 
-.onhand::before {
-    content: "On Hand: ";
+/* Badge styles for transferring and incoming */
+.transfer-badge, .incoming-badge {
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
     font-weight: 500;
 }
 
-.threshold::before {
-    content: "Min: ";
-    font-weight: 500;
-}
-
-/* Shine effect for cylinders */
-.cylinder-fill::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.2) 0%,
-        rgba(255, 255, 255, 0) 50%,
-        rgba(255, 255, 255, 0) 100%
-    );
-    border-radius: 8px 8px 0 0;
-}
-
-/* Responsive Styles */
+/* Media Queries - Update for better responsiveness */
 @media (min-width: 1200px) {
     .product-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     }
 }
 
 @media (min-width: 1600px) {
     .product-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
     }
 }
 
 @media (min-width: 2000px) {
     .product-grid {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     }
 }
 
 @media (max-width: 1400px) {
     .product-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 }
 
 @media (max-width: 1200px) {
     .product-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
     
     .metrics-container {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
     }
     
     .filter-row {
         grid-template-columns: repeat(2, 1fr);
         gap: 8px;
     }
-    
-    .filter-container {
-        padding: 10px 12px;
-    }
-    
-    .filter-pills-container {
-        padding-top: 6px;
-        margin-top: 4px;
-    }
-    
-    /* Adjust padding and margins for smaller screens */
-    main {
-        padding: 20px;
-    }
-    
-    .cylinder-container {
-        width: 70px;
-        height: 120px;
-    }
 }
 
 @media (max-width: 992px) {
-    .sidebar {
-        width: 220px;
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
     }
     
-    main {
-        margin-left: 220px;
-        width: calc(100% - 220px);
-    }
-    
-    /* Adjust metric cards */
     .metric-card {
         padding: 15px;
     }
@@ -814,12 +642,114 @@ select.filter-input {
         font-size: 24px;
     }
     
-    /* Smaller product cards */
+    .cylinder-container {
+        width: 55px;
+        height: 100px;
+    }
+    
+    .threshold-line::before {
+        left: -12px;
+        font-size: 7px;
+    }
+}
+
+@media (max-width: 768px) {
+    .inventory-visualization {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+    
+    .location-inventory {
+        width: 45%;
+    }
+    
+    .product-card {
+        padding: 10px;
+    }
+    
+    .product-title {
+        font-size: 14px;
+    }
+    
+    .product-meta {
+        font-size: 10px;
+    }
+    
+    .metrics-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .filter-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 576px) {
+    .inventory-visualization {
+        flex-direction: row;
+    }
+    
+    .location-inventory {
+        width: 45%;
+    }
+    
+    .cylinder-container {
+        width: 50px;
+        height: 90px;
+    }
+    
+    .stock-display {
+        font-size: 12px;
+    }
+    
+    .cylinder-value {
+        font-size: 10px;
+    }
+    
+    .threshold-line::before {
+        font-size: 6px;
+        left: -10px;
+    }
+    
+    .product-image {
+        height: 80px;
+    }
+    
+    .inventory-details {
+        font-size: 9px;
+    }
+}
+
+/* When sidebar is toggled open, adjust main content */
+.sidebar.active {
+    transform: translateX(0);
+}
+
+.sidebar.active + main {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    
+    .metric-card {
+        padding: 15px;
+    }
+    
+    .metric-content p {
+        font-size: 24px;
+    }
+    
     .product-card {
         padding: 15px;
     }
     
-    /* Adjust filter container */
     .filter-container {
         padding: 15px;
     }
@@ -1104,18 +1034,7 @@ select.filter-input {
 
 /* Add overlay for mobile menu */
 .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
     display: none;
-}
-
-.sidebar-overlay.active {
-    display: block;
 }
 
 /* Loading and Error States */
@@ -1312,16 +1231,6 @@ main {
     pointer-events: none;
 }
 
-.cylinder-fill .cylinder-value {
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.cylinder-incoming .cylinder-value {
-    top: 50%;
-    transform: translateY(-50%);
-}
-
 /* Add a new border color for transfer cards */
 .product-card.border-transfer::before {
     border-left: 3px solid var(--border-transfer);
@@ -1355,4 +1264,124 @@ main {
     gap: 10px;
     margin-bottom: 15px;
     font-size: 13px;
+}
+
+/* Cylinder Styles */
+.cylinder-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%; /* Will be set dynamically */
+    background: linear-gradient(to bottom, rgba(66, 165, 245, 0.8), rgba(66, 165, 245, 0.6));
+    border-radius: 6px 6px 0 0;
+    transition: height 0.5s ease, background 0.3s ease;
+    z-index: 1;
+    box-shadow: 0 0 8px rgba(66, 165, 245, 0.4) inset;
+}
+
+/* Top cap of cylinder */
+.cylinder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px 6px 0 0;
+    z-index: 3;
+}
+
+/* Bottom cap of cylinder */
+.cylinder::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(80, 80, 80, 0.2), rgba(60, 60, 60, 0.1));
+    border-radius: 6px;
+    z-index: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cylinder-fill.low {
+    background: linear-gradient(to bottom, rgba(255, 82, 82, 0.8), rgba(255, 82, 82, 0.6));
+    box-shadow: 0 0 8px rgba(255, 82, 82, 0.4) inset;
+}
+
+.cylinder-fill.medium {
+    background: linear-gradient(to bottom, rgba(255, 193, 7, 0.8), rgba(255, 193, 7, 0.6));
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4) inset;
+}
+
+.cylinder-fill.good {
+    background: linear-gradient(to bottom, rgba(0, 200, 83, 0.8), rgba(0, 200, 83, 0.6));
+    box-shadow: 0 0 8px rgba(0, 200, 83, 0.4) inset;
+}
+
+.cylinder-fill.empty {
+    height: 100% !important;
+    background: rgba(255, 82, 82, 0.15);
+    box-shadow: inset 0 0 8px rgba(255, 82, 82, 0.1);
+    border-radius: 6px;
+}
+
+/* Stock Display - Improved Positioning */
+.stock-display {
+    position: absolute;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    width: 100%;
+    text-align: center;
+    padding: 0;
+}
+
+/* Incoming Indicator styles */
+.cylinder-incoming {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%; /* Will be set dynamically */
+    background: linear-gradient(to bottom, rgba(65, 105, 225, 0.7), rgba(65, 105, 225, 0.5));
+    border-radius: 6px 6px 0 0;
+    transition: height 0.5s ease;
+    z-index: 2;
+}
+
+/* Shine effect for cylinders */
+.cylinder-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    border-radius: 6px 6px 0 0;
+}
+
+.onhand::before {
+    content: "On: ";
+    font-weight: 500;
+}
+
+.threshold::before {
+    content: "Min: ";
+    font-weight: 500;
+}
+
+.menu-toggle {
+    display: none;
 } 

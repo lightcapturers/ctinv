@@ -5,8 +5,7 @@ let uniqueProductTypes = new Set();
 let uniqueSKUs = new Set();
 let uniqueProductTitles = new Set();
 let currentPage = 1;
-// Remove itemsPerPage limit to show all items
-// const itemsPerPage = 8; // Reduced items per page for a more compact view
+let itemsPerPage = 0; // Will be calculated based on viewport size
 const elMonteLocationId = 'gid://shopify/Location/68455891180';
 const whittierLocationId = 'gid://shopify/Location/71820017900';
 const API_ENDPOINT = '/api/inventory'; // Endpoint to fetch data from server
@@ -14,27 +13,23 @@ let selectedProductTypes = new Set(); // Track selected product type pills
 
 // Document ready function
 document.addEventListener('DOMContentLoaded', () => {
-    // Load data from API endpoint that will provide Google Sheets data
+    // We've removed the sidebar completely, so no need to initialize it
+    
+    // Handle window resize
+    window.addEventListener('resize', handleWindowResize);
+    handleWindowResize();
+    
+    // Load inventory data
     loadInventoryData();
-
-    // Add event listeners
+    
+    // Setup event listeners
     document.getElementById('refreshData').addEventListener('click', refreshData);
     document.getElementById('applyFilters').addEventListener('click', applyFilters);
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
     
-    // Setup mobile menu toggle
-    setupMobileMenu();
-    
-    // Add window resize handler for responsive adjustments
-    window.addEventListener('resize', handleWindowResize);
-    
-    // Remove pagination event listeners
-    // document.getElementById('prevPage').addEventListener('click', () => navigatePage(-1));
-    // document.getElementById('nextPage').addEventListener('click', () => navigatePage(1));
-    
-    // Add autocomplete event listeners
-    setupAutocomplete('skuFilter', 'skuAutocomplete', uniqueSKUs);
-    setupAutocomplete('productTitleFilter', 'productTitleAutocomplete', uniqueProductTitles);
+    // Setup autocomplete for SKU and Product Title
+    setupAutocomplete('skuFilter', 'skuAutocomplete', []);
+    setupAutocomplete('productTitleFilter', 'productTitleAutocomplete', []);
     
     // Hide pagination elements
     document.querySelector('.pagination').style.display = 'none';
@@ -84,20 +79,10 @@ function setupMobileMenu() {
 
 // Handle window resize events
 function handleWindowResize() {
-    // Check if window is resized beyond mobile breakpoint
-    if (window.innerWidth > 768) {
-        const sidebar = document.getElementById('sidebar');
-        const menuToggle = document.getElementById('menuToggle');
-        const overlay = document.getElementById('sidebarOverlay');
-        
-        // Reset mobile menu state
-        sidebar.classList.remove('active');
-        menuToggle.classList.remove('active');
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-    }
+    // All sidebar references have been removed,
+    // so we don't need to reset anything here
     
-    // Additional responsive adjustments can be added here
+    // Additional responsive adjustments can be added here if needed
 }
 
 // Load inventory data from API
@@ -657,28 +642,21 @@ function truncateText(text, maxLength) {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
-// Setup cylinder visualization
+// Setup cylinder visualization (updated for compact design)
 function setupCylinder(containerElement, onHand, threshold, incoming, incomingDate) {
     const cylinder = containerElement.querySelector('.cylinder');
     const fillElement = cylinder.querySelector('.cylinder-fill');
     const incomingElement = cylinder.querySelector('.cylinder-incoming');
     const thresholdLine = cylinder.querySelector('.threshold-line');
     const stockDisplay = cylinder.querySelector('.stock-display');
-    const percentageDisplay = cylinder.querySelector('.stock-percentage');
     
-    // Clear any previous incoming indicators or value labels
-    const existingIndicator = cylinder.querySelector('.incoming-indicator');
-    if (existingIndicator) {
-        existingIndicator.remove();
-    }
-    
-    // Remove existing value labels
+    // Clear any previous value labels
     const existingValues = cylinder.querySelectorAll('.cylinder-value');
     existingValues.forEach(el => el.remove());
     
     // Normalize values
     onHand = Math.max(0, parseInt(onHand) || 0);
-    threshold = Math.max(1, parseInt(threshold) || 5); // Default threshold to 5 if invalid
+    threshold = Math.max(1, parseInt(threshold) || 5);
     incoming = Math.max(0, parseInt(incoming) || 0);
     
     // Format incomingDate properly
@@ -692,33 +670,38 @@ function setupCylinder(containerElement, onHand, threshold, incoming, incomingDa
     // Remove any existing classes
     fillElement.classList.remove('low', 'medium', 'good', 'empty', 'has-incoming');
     
-    // Hide the stock display by default when we're using value labels inside the cylinder
-    if (incoming > 0 || onHand > 0) {
-        stockDisplay.style.display = 'none';
-    } else {
-        stockDisplay.style.display = 'block';
-    }
-    
     // Set appropriate class based on stock level
     if (onHand === 0) {
         fillElement.classList.add('empty');
         stockDisplay.style.color = 'rgba(255, 82, 82, 0.8)';
         stockDisplay.style.textShadow = 'none';
-        percentageDisplay.style.color = 'rgba(255, 82, 82, 0.8)';
-        // Position the stock display in the middle of cylinder for empty state
         stockDisplay.style.bottom = '50%';
         stockDisplay.style.transform = 'translateY(50%)';
-        stockDisplay.style.display = 'block'; // Always show the 0 for empty cylinders
+        stockDisplay.style.display = 'block';
+        stockDisplay.textContent = onHand;
     } else {
-        // Set fill height based on percentage for non-zero values
+        // For non-empty cylinders, display value in cylinder
+        stockDisplay.style.display = 'none';
+        
+        // Set fill height based on percentage
         fillElement.style.height = `${currentPercentage}%`;
         
-        // Add value label to the fill section
+        // Always add value label to the cylinder, not to fill element
         const fillValue = document.createElement('div');
         fillValue.className = 'cylinder-value';
         fillValue.textContent = onHand;
-        fillElement.appendChild(fillValue);
+        cylinder.appendChild(fillValue);
         
+        // Position the value in the middle of the filled area
+        // (or in the middle of the cylinder if it would be too low)
+        const minHeightForLabel = 20; // Minimum height percentage for label to appear in fill
+        if (currentPercentage >= minHeightForLabel) {
+            fillValue.style.bottom = `${currentPercentage / 2}%`;
+        } else {
+            fillValue.style.bottom = '50%';
+        }
+        
+        // Set fill color class
         if (currentPercentage < 25) {
             fillElement.classList.add('low');
         } else if (currentPercentage < 60) {
@@ -740,11 +723,14 @@ function setupCylinder(containerElement, onHand, threshold, incoming, incomingDa
         incomingElement.style.height = `${incomingPercentage}%`;
         incomingElement.style.bottom = `${currentPercentage}%`;
         
-        // Add value label to the incoming section
+        // Add value label to the incoming section 
         const incomingValue = document.createElement('div');
-        incomingValue.className = 'cylinder-value';
+        incomingValue.className = 'cylinder-value incoming-value';
         incomingValue.textContent = incoming;
-        incomingElement.appendChild(incomingValue);
+        cylinder.appendChild(incomingValue);
+        
+        // Position the value in the middle of the incoming area
+        incomingValue.style.bottom = `${currentPercentage + (incomingPercentage / 2)}%`;
         
         // Store incoming date for tooltip
         incomingElement.dataset.incomingDate = formattedIncomingDate;
@@ -752,40 +738,26 @@ function setupCylinder(containerElement, onHand, threshold, incoming, incomingDa
         
         // Add hover events for tooltip
         incomingElement.addEventListener('mouseenter', function(e) {
-            // Get the container rectangle and adjust for scroll position
             const rect = containerElement.getBoundingClientRect();
-            
-            // Create tooltip directly above the cylinder
             const tooltipContent = `
                 <div style="text-align: center;">
                     <strong>Incoming: ${this.dataset.incomingAmount} units</strong><br>
                     Expected: ${this.dataset.incomingDate}
                 </div>
             `;
-            
-            // Position tooltip centered above the cylinder
             showTooltip(
-                rect.left + (rect.width / 2),  // Center horizontally
-                rect.top - 10,                  // Position above with small offset
+                rect.left + (rect.width / 2),
+                rect.top - 10,
                 tooltipContent
             );
         });
         
         incomingElement.addEventListener('mouseleave', hideTooltip);
-        
-        // Update percentage display to show combined total
-        percentageDisplay.textContent = `${currentPercentage}% + ${incomingPercentage}%`;
     } else {
         // Reset incoming element
         incomingElement.style.height = '0';
         incomingElement.style.bottom = '0';
-        
-        // Update percentage display
-        percentageDisplay.textContent = `${currentPercentage}%`;
     }
-    
-    // Update stock display (only used for empty cylinders now)
-    stockDisplay.textContent = onHand;
 }
 
 // Initialize lazy loading of cylinders (keeping this function for compatibility)
