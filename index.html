@@ -87,11 +87,17 @@
                     </div>
                     <div class="filter-group">
                         <label for="skuFilter">SKU</label>
-                        <input type="text" id="skuFilter" class="filter-input" placeholder="Search SKUs...">
+                        <div class="autocomplete-container">
+                            <input type="text" id="skuFilter" class="filter-input" placeholder="Search SKUs...">
+                            <div id="skuAutocomplete" class="autocomplete-items"></div>
+                        </div>
                     </div>
                     <div class="filter-group">
                         <label for="productTitleFilter">Product Title</label>
-                        <input type="text" id="productTitleFilter" class="filter-input" placeholder="Search product titles...">
+                        <div class="autocomplete-container">
+                            <input type="text" id="productTitleFilter" class="filter-input" placeholder="Search product titles...">
+                            <div id="productTitleAutocomplete" class="autocomplete-items"></div>
+                        </div>
                     </div>
                     <div class="filter-group">
                         <label for="stockLevelFilter">Stock Level</label>
@@ -103,6 +109,13 @@
                         </select>
                     </div>
                 </div>
+                
+                <!-- Product Type Filter Pills -->
+                <div class="filter-pills-container">
+                    <div class="filter-pills-label">Quick Filters:</div>
+                    <div id="productTypePills" class="filter-pills"></div>
+                </div>
+                
                 <div class="filter-actions">
                     <button id="applyFilters" class="btn btn-primary">Apply Filters</button>
                     <button id="clearFilters" class="btn btn-secondary">Clear Filters</button>

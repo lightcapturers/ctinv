@@ -216,6 +216,96 @@ header {
     gap: 10px;
 }
 
+/* Filter Pills Styles */
+.filter-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border-color);
+}
+
+.filter-pills-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-right: 10px;
+    padding: 5px 0;
+}
+
+.filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-pill {
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.filter-pill:hover {
+    background-color: rgba(65, 105, 225, 0.1);
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+}
+
+.filter-pill.active {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+}
+
+/* Autocomplete Styles */
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-items {
+    position: absolute;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 5px 5px;
+    border-top: none;
+    box-shadow: 0 4px 8px var(--shadow-color);
+    display: none;
+}
+
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover, .autocomplete-item.selected {
+    background-color: rgba(65, 105, 225, 0.2);
+    color: var(--text-primary);
+}
+
+.autocomplete-highlight {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
 /* Button Styles */
 .btn {
     padding: 10px 15px;
@@ -472,17 +562,6 @@ header {
     margin-top: -10px;
 }
 
-/* No results message styling */
-.no-results {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 30px;
-    background-color: var(--background-card);
-    border-radius: 8px;
-    color: var(--text-secondary);
-    font-size: 16px;
-}
-
 /* Loading and Error Messages */
 .loading, .error-message {
     grid-column: 1 / -1;
@@ -498,4 +577,15 @@ header {
 .error-message {
     color: var(--accent-red);
     border-left: 3px solid var(--accent-red);
+}
+
+/* No results message styling */
+.no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 30px;
+    background-color: var(--background-card);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 16px;
 } 

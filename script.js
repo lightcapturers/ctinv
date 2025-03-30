@@ -2,11 +2,14 @@
 let inventoryData = [];
 let filteredData = [];
 let uniqueProductTypes = new Set();
+let uniqueSKUs = new Set();
+let uniqueProductTitles = new Set();
 let currentPage = 1;
 const itemsPerPage = 8; // Reduced items per page for a more compact view
 const elMonteLocationId = 'gid://shopify/Location/68455891180';
 const whittierLocationId = 'gid://shopify/Location/71820017900';
 const API_ENDPOINT = '/api/inventory'; // Endpoint to fetch data from server
+let selectedProductTypes = new Set(); // Track selected product type pills
 
 // Document ready function
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,6 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
     document.getElementById('prevPage').addEventListener('click', () => navigatePage(-1));
     document.getElementById('nextPage').addEventListener('click', () => navigatePage(1));
+    
+    // Add autocomplete event listeners
+    setupAutocomplete('skuFilter', 'skuAutocomplete', uniqueSKUs);
+    setupAutocomplete('productTitleFilter', 'productTitleAutocomplete', uniqueProductTitles);
 });
 
 // Load inventory data from API
@@ -49,6 +56,11 @@ async function loadInventoryData() {
 
 // Process and organize the data from API
 function processData(data) {
+    // Reset collections
+    uniqueProductTypes.clear();
+    uniqueSKUs.clear();
+    uniqueProductTitles.clear();
+    
     // Group data by product and variant
     const productMap = new Map();
     
@@ -56,6 +68,15 @@ function processData(data) {
         // Add product type to unique set
         if (item['Product Type']) {
             uniqueProductTypes.add(item['Product Type']);
+        }
+        
+        // Add SKU and Product Title to unique sets
+        if (item['SKU']) {
+            uniqueSKUs.add(item['SKU']);
+        }
+        
+        if (item['Product Title']) {
+            uniqueProductTitles.add(item['Product Title']);
         }
         
         // Create a unique key for each product+variant
@@ -88,8 +109,9 @@ function processData(data) {
     inventoryData = Array.from(productMap.values());
     filteredData = [...inventoryData];
     
-    // Populate product type filter
+    // Populate product type filter dropdown and pills
     populateProductTypeFilter();
+    populateProductTypePills();
 }
 
 // Populate product type filter dropdown
@@ -108,6 +130,164 @@ function populateProductTypeFilter() {
             option.value = type;
             option.textContent = type;
             productTypeFilter.appendChild(option);
+        }
+    });
+}
+
+// Populate product type filter pills
+function populateProductTypePills() {
+    const pillsContainer = document.getElementById('productTypePills');
+    pillsContainer.innerHTML = '';
+    
+    // Sort product types alphabetically
+    const sortedTypes = Array.from(uniqueProductTypes).sort();
+    
+    // Create a pill for each product type
+    sortedTypes.forEach(type => {
+        if (type) {
+            const pill = document.createElement('div');
+            pill.className = 'filter-pill';
+            if (selectedProductTypes.has(type)) {
+                pill.classList.add('active');
+            }
+            pill.textContent = type;
+            pill.dataset.type = type;
+            
+            // Add click event
+            pill.addEventListener('click', toggleProductTypePill);
+            
+            pillsContainer.appendChild(pill);
+        }
+    });
+}
+
+// Toggle product type pill selection
+function toggleProductTypePill(event) {
+    const pill = event.currentTarget;
+    const type = pill.dataset.type;
+    
+    if (selectedProductTypes.has(type)) {
+        selectedProductTypes.delete(type);
+        pill.classList.remove('active');
+    } else {
+        selectedProductTypes.add(type);
+        pill.classList.add('active');
+    }
+    
+    // Update the dropdown to reflect selection
+    const productTypeFilter = document.getElementById('productTypeFilter');
+    if (selectedProductTypes.size === 1) {
+        productTypeFilter.value = Array.from(selectedProductTypes)[0];
+    } else {
+        productTypeFilter.value = '';
+    }
+    
+    // Apply filters
+    applyFilters();
+}
+
+// Set up autocomplete for an input field
+function setupAutocomplete(inputId, autocompleteId, dataSet) {
+    const input = document.getElementById(inputId);
+    const autocompleteDiv = document.getElementById(autocompleteId);
+    
+    // Add input event listener
+    input.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        
+        // Close any already open lists
+        autocompleteDiv.innerHTML = '';
+        
+        // If no input, hide the autocomplete list
+        if (!value) {
+            autocompleteDiv.style.display = 'none';
+            return;
+        }
+        
+        // Create a filtered array of matches
+        const matches = Array.from(dataSet)
+            .filter(item => item.toLowerCase().includes(value))
+            .sort()
+            .slice(0, 10); // Limit to 10 results
+        
+        if (matches.length === 0) {
+            autocompleteDiv.style.display = 'none';
+            return;
+        }
+        
+        // Display autocomplete items
+        matches.forEach(match => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            
+            // Highlight the matching part
+            const matchIndex = match.toLowerCase().indexOf(value);
+            const highlighted = match.substring(0, matchIndex) + 
+                `<span class="autocomplete-highlight">${match.substring(matchIndex, matchIndex + value.length)}</span>` + 
+                match.substring(matchIndex + value.length);
+            
+            item.innerHTML = highlighted;
+            
+            // Click event to select an item
+            item.addEventListener('click', function() {
+                input.value = match;
+                autocompleteDiv.style.display = 'none';
+            });
+            
+            autocompleteDiv.appendChild(item);
+        });
+        
+        autocompleteDiv.style.display = 'block';
+    });
+    
+    // Close autocomplete list when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target !== input && e.target !== autocompleteDiv) {
+            autocompleteDiv.style.display = 'none';
+        }
+    });
+    
+    // Handle keyboard navigation
+    input.addEventListener('keydown', function(e) {
+        const items = autocompleteDiv.getElementsByClassName('autocomplete-item');
+        if (!items.length) return;
+        
+        // Find currently selected item
+        let selectedIndex = -1;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].classList.contains('selected')) {
+                selectedIndex = i;
+                break;
+            }
+        }
+        
+        // Arrow down
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (selectedIndex < items.length - 1) {
+                if (selectedIndex > -1) {
+                    items[selectedIndex].classList.remove('selected');
+                }
+                items[selectedIndex + 1].classList.add('selected');
+                items[selectedIndex + 1].scrollIntoView({ block: 'nearest' });
+            }
+        } 
+        // Arrow up
+        else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (selectedIndex > 0) {
+                items[selectedIndex].classList.remove('selected');
+                items[selectedIndex - 1].classList.add('selected');
+                items[selectedIndex - 1].scrollIntoView({ block: 'nearest' });
+            }
+        } 
+        // Enter
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex > -1) {
+                input.value = items[selectedIndex].textContent.replace(/[\n\r]+|[\s]{2,}/g, ' ').trim();
+                autocompleteDiv.style.display = 'none';
+            }
         }
     });
 }
@@ -567,14 +747,25 @@ function hideTooltip() {
 
 // Apply filters
 function applyFilters() {
+    // Get filter values
     const productType = document.getElementById('productTypeFilter').value;
     const sku = document.getElementById('skuFilter').value.toLowerCase();
     const productTitle = document.getElementById('productTitleFilter').value.toLowerCase();
     const stockLevel = document.getElementById('stockLevelFilter').value;
     
     filteredData = inventoryData.filter(product => {
-        // Filter by product type
+        // Filter by product type (from dropdown)
         if (productType && product.productType !== productType) {
+            // Check if we should use the pill selection instead
+            if (selectedProductTypes.size > 0 && !selectedProductTypes.has(product.productType)) {
+                return false;
+            } else if (selectedProductTypes.size === 0) {
+                return false;
+            }
+        }
+        
+        // If pill selection is active and dropdown is empty
+        if (!productType && selectedProductTypes.size > 0 && !selectedProductTypes.has(product.productType)) {
             return false;
         }
         
@@ -620,6 +811,11 @@ function clearFilters() {
     document.getElementById('skuFilter').value = '';
     document.getElementById('productTitleFilter').value = '';
     document.getElementById('stockLevelFilter').value = '';
+    
+    // Clear pill selections
+    selectedProductTypes.clear();
+    const pills = document.querySelectorAll('.filter-pill');
+    pills.forEach(pill => pill.classList.remove('active'));
     
     filteredData = [...inventoryData];
     currentPage = 1;
