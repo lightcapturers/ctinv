@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('applyFilters').addEventListener('click', applyFilters);
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
     
+    // Setup mobile menu toggle
+    setupMobileMenu();
+    
+    // Add window resize handler for responsive adjustments
+    window.addEventListener('resize', handleWindowResize);
+    
     // Remove pagination event listeners
     // document.getElementById('prevPage').addEventListener('click', () => navigatePage(-1));
     // document.getElementById('nextPage').addEventListener('click', () => navigatePage(1));
@@ -33,6 +39,66 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hide pagination elements
     document.querySelector('.pagination').style.display = 'none';
 });
+
+// Setup mobile menu toggle
+function setupMobileMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    // Toggle sidebar when menu button is clicked
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+        menuToggle.classList.toggle('active');
+        overlay.classList.toggle('active');
+        
+        // Prevent body scrolling when sidebar is open
+        if (sidebar.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    });
+    
+    // Close sidebar when clicking overlay
+    overlay.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+        menuToggle.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    });
+    
+    // Close sidebar when clicking a menu item
+    const menuItems = sidebar.querySelectorAll('nav a');
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+                menuToggle.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+}
+
+// Handle window resize events
+function handleWindowResize() {
+    // Check if window is resized beyond mobile breakpoint
+    if (window.innerWidth > 768) {
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        // Reset mobile menu state
+        sidebar.classList.remove('active');
+        menuToggle.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // Additional responsive adjustments can be added here
+}
 
 // Load inventory data from API
 async function loadInventoryData() {
@@ -371,98 +437,98 @@ function renderProductCards() {
     });
 }
 
-// Create a single product card
+// Create product card
 function createProductCard(product) {
+    // Clone template
     const template = document.getElementById('productCardTemplate');
-    const cardClone = template.content.cloneNode(true);
+    const productCard = template.content.cloneNode(true);
     
-    // Get location data
-    const elMonteLocation = product.locations.find(loc => loc.locationId === elMonteLocationId) || {
-        onHand: 0,
-        threshold: 0,
-        incoming: 0,
-        incomingDate: ''
-    };
-    
-    const whittierLocation = product.locations.find(loc => loc.locationId === whittierLocationId) || {
-        onHand: 0,
-        threshold: 0,
-        incoming: 0,
-        incomingDate: ''
-    };
-
-    // Determine card border color based on stock status
-    const card = cardClone.querySelector('.product-card');
-    let borderColor = 'border-normal';
-    
-    // If either location is low on stock
-    if ((elMonteLocation.onHand < elMonteLocation.threshold * 0.2 && elMonteLocation.threshold > 0) ||
-        (whittierLocation.onHand < whittierLocation.threshold * 0.2 && whittierLocation.threshold > 0)) {
-        borderColor = 'border-danger';
-    } 
-    // If either location has incoming stock
-    else if (elMonteLocation.incoming > 0 || whittierLocation.incoming > 0) {
-        borderColor = 'border-warning';
-    }
-    // If stock is good
-    else if (elMonteLocation.onHand >= elMonteLocation.threshold && whittierLocation.onHand >= whittierLocation.threshold) {
-        borderColor = 'border-success';
-    }
-    
-    card.classList.add(borderColor);
-    
-    // Set product information - truncate long titles
-    const productTitle = cardClone.querySelector('.product-title');
-    productTitle.textContent = truncateText(product.productTitle, 30);
-    productTitle.title = product.productTitle; // Set full title as tooltip
-    
-    const variantTitle = cardClone.querySelector('.variant-title');
-    variantTitle.textContent = truncateText(product.variantTitle, 30);
-    variantTitle.title = product.variantTitle; // Set full variant as tooltip
-    
-    cardClone.querySelector('.product-type').textContent = product.productType;
-    cardClone.querySelector('.product-sku').textContent = `SKU: ${product.sku}`;
+    // Set product details
+    productCard.querySelector('.product-title').textContent = truncateText(product.productTitle, 40);
+    productCard.querySelector('.variant-title').textContent = product.variantTitle || 'Standard';
+    productCard.querySelector('.product-type').textContent = product.productType || 'Unknown Type';
+    productCard.querySelector('.product-sku').textContent = product.sku || 'No SKU';
     
     // Set product image
-    const imgElement = cardClone.querySelector('.product-image img');
+    const imageElement = productCard.querySelector('.product-image img');
     if (product.imageUrl) {
-        imgElement.src = product.imageUrl;
-        imgElement.alt = product.productTitle;
+        imageElement.src = product.imageUrl;
+        imageElement.alt = product.productTitle;
     } else {
-        imgElement.src = 'https://picsum.photos/300/200';
-        imgElement.alt = 'Product image placeholder';
+        imageElement.src = 'https://via.placeholder.com/150?text=No+Image';
+        imageElement.alt = 'No Image Available';
     }
     
-    // Set El Monte inventory details - simplify display
-    const elMonteContainer = cardClone.querySelectorAll('.location-inventory')[0];
-    elMonteContainer.querySelector('.onhand').textContent = `On Hand: ${elMonteLocation.onHand}`;
-    elMonteContainer.querySelector('.threshold').textContent = `Threshold: ${elMonteLocation.threshold}`;
+    // Get locations
+    const elMonteLocation = product.locations.find(location => location.locationId === elMonteLocationId);
+    const whittierLocation = product.locations.find(location => location.locationId === whittierLocationId);
     
-    // Set Whittier inventory details - simplify display
-    const whittierContainer = cardClone.querySelectorAll('.location-inventory')[1];
-    whittierContainer.querySelector('.onhand').textContent = `On Hand: ${whittierLocation.onHand}`;
-    whittierContainer.querySelector('.threshold').textContent = `Threshold: ${whittierLocation.threshold}`;
+    // Determine overall status for card border
+    let cardStatus = 'normal';
+    if (elMonteLocation && whittierLocation) {
+        const elMonteRatio = elMonteLocation.onHand / Math.max(1, elMonteLocation.threshold);
+        const whittierRatio = whittierLocation.onHand / Math.max(1, whittierLocation.threshold);
+        
+        if (elMonteRatio < 0.2 || whittierRatio < 0.2) {
+            cardStatus = 'danger';
+        } else if (elMonteRatio < 0.5 || whittierRatio < 0.5) {
+            cardStatus = 'warning';
+        } else {
+            cardStatus = 'success';
+        }
+    }
     
-    // Pre-configure canvas elements with data attributes
-    const elMonteCanvas = elMonteContainer.querySelector('.cylinder-chart');
-    elMonteCanvas.dataset.location = 'el-monte';
-    elMonteCanvas.dataset.elMonte = JSON.stringify({
-        onHand: elMonteLocation.onHand,
-        threshold: elMonteLocation.threshold,
-        incoming: elMonteLocation.incoming,
-        incomingDate: elMonteLocation.incomingDate
-    });
+    // Set card border status
+    const card = productCard.querySelector('.product-card');
+    card.classList.add(`border-${cardStatus}`);
     
-    const whittierCanvas = whittierContainer.querySelector('.cylinder-chart');
-    whittierCanvas.dataset.location = 'whittier';
-    whittierCanvas.dataset.whittier = JSON.stringify({
-        onHand: whittierLocation.onHand,
-        threshold: whittierLocation.threshold,
-        incoming: whittierLocation.incoming,
-        incomingDate: whittierLocation.incomingDate
-    });
+    // Setup El Monte inventory
+    if (elMonteLocation) {
+        const elMonteContainer = productCard.querySelector('[data-location="el-monte"]');
+        setupCylinder(
+            elMonteContainer,
+            elMonteLocation.onHand,
+            elMonteLocation.threshold,
+            elMonteLocation.incoming
+        );
+        
+        // Set detail text
+        productCard.querySelector('[data-location="el-monte"]').closest('.location-inventory').querySelector('.onhand').textContent = elMonteLocation.onHand;
+        productCard.querySelector('[data-location="el-monte"]').closest('.location-inventory').querySelector('.threshold').textContent = elMonteLocation.threshold;
+    } else {
+        // No location data for El Monte
+        const elMonteContainer = productCard.querySelector('[data-location="el-monte"]');
+        setupCylinder(elMonteContainer, 0, 5, 0);
+        
+        // Set detail text
+        productCard.querySelector('[data-location="el-monte"]').closest('.location-inventory').querySelector('.onhand').textContent = '0';
+        productCard.querySelector('[data-location="el-monte"]').closest('.location-inventory').querySelector('.threshold').textContent = '0';
+    }
     
-    return cardClone;
+    // Setup Whittier inventory
+    if (whittierLocation) {
+        const whittierContainer = productCard.querySelector('[data-location="whittier"]');
+        setupCylinder(
+            whittierContainer,
+            whittierLocation.onHand,
+            whittierLocation.threshold,
+            whittierLocation.incoming
+        );
+        
+        // Set detail text
+        productCard.querySelector('[data-location="whittier"]').closest('.location-inventory').querySelector('.onhand').textContent = whittierLocation.onHand;
+        productCard.querySelector('[data-location="whittier"]').closest('.location-inventory').querySelector('.threshold').textContent = whittierLocation.threshold;
+    } else {
+        // No location data for Whittier
+        const whittierContainer = productCard.querySelector('[data-location="whittier"]');
+        setupCylinder(whittierContainer, 0, 5, 0);
+        
+        // Set detail text
+        productCard.querySelector('[data-location="whittier"]').closest('.location-inventory').querySelector('.onhand').textContent = '0';
+        productCard.querySelector('[data-location="whittier"]').closest('.location-inventory').querySelector('.threshold').textContent = '0';
+    }
+    
+    return productCard;
 }
 
 // Helper function to truncate text with ellipsis
@@ -471,303 +537,87 @@ function truncateText(text, maxLength) {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
-// Create visualization chart
-function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDate = '') {
-    if (!canvas) {
-        console.error('Canvas element is null or undefined');
-        return;
-    }
-
-    // Remove any existing chart
-    Chart.getChart(canvas)?.destroy();
+// Setup cylinder visualization
+function setupCylinder(containerElement, onHand, threshold, incoming) {
+    const cylinder = containerElement.querySelector('.cylinder');
+    const fillElement = cylinder.querySelector('.cylinder-fill');
+    const thresholdLine = cylinder.querySelector('.threshold-line');
+    const stockDisplay = cylinder.querySelector('.stock-display');
+    const percentageDisplay = cylinder.querySelector('.stock-percentage');
     
-    // Remove any existing error messages
-    const previousError = canvas.parentElement.querySelector('.cylinder-error');
-    if (previousError) {
-        canvas.parentElement.removeChild(previousError);
+    // Clear any previous incoming indicators
+    const existingIndicator = cylinder.querySelector('.incoming-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
     }
-
-    try {
-        // Normalize values for calculations
-        onHand = Math.max(0, parseInt(onHand) || 0);
-        threshold = Math.max(1, parseInt(threshold) || 1);
+    
+    // Normalize values
+    onHand = Math.max(0, parseInt(onHand) || 0);
+    threshold = Math.max(1, parseInt(threshold) || 5); // Default threshold to 5 if invalid
+    incoming = Math.max(0, parseInt(incoming) || 0);
+    
+    // Calculate percentage
+    const percentage = Math.min(Math.round((onHand / threshold) * 100), 100);
+    
+    // Add incoming indicator if applicable
+    if (incoming > 0) {
+        const incomingIndicator = document.createElement('div');
+        incomingIndicator.className = 'incoming-indicator';
+        incomingIndicator.textContent = `+${incoming}`;
+        cylinder.appendChild(incomingIndicator);
+    }
+    
+    // Remove any existing classes
+    fillElement.classList.remove('low', 'medium', 'good', 'empty');
+    
+    // Set appropriate class based on stock level
+    if (onHand === 0) {
+        fillElement.classList.add('empty');
+        stockDisplay.style.color = 'rgba(255, 82, 82, 0.8)';
+        stockDisplay.style.textShadow = 'none';
+        percentageDisplay.style.color = 'rgba(255, 82, 82, 0.8)';
+        // Position the stock display in the middle of cylinder for empty state
+        stockDisplay.style.bottom = '50%';
+        stockDisplay.style.transform = 'translateY(50%)';
+    } else {
+        // Set fill height based on percentage for non-zero values
+        fillElement.style.height = `${percentage}%`;
+        stockDisplay.style.color = 'white';
+        stockDisplay.style.textShadow = '0 1px 2px rgba(0, 0, 0, 0.5)';
+        percentageDisplay.style.color = 'var(--text-secondary)';
+        stockDisplay.style.transform = '';
         
-        // Calculate percentage for color determination
-        const percentage = Math.min(Math.round((onHand / threshold) * 100), 100);
-        
-        // Determine color based on stock level
-        let color;
-        if (percentage < 20) {
-            color = '#FF5252'; // Red
-        } else if (percentage < 50) {
-            color = '#FFC107'; // Yellow
+        if (percentage < 25) {
+            fillElement.classList.add('low');
+        } else if (percentage < 60) {
+            fillElement.classList.add('medium');
         } else {
-            color = '#00C853'; // Green
+            fillElement.classList.add('good');
         }
         
-        // Create vertical bar chart
-        new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: [''], // Single empty label
-                datasets: [{
-                    label: 'Stock',
-                    data: [onHand],
-                    backgroundColor: color,
-                    borderWidth: 0,
-                    borderRadius: 4,
-                    barThickness: 40
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 20,    // Add padding for threshold line
-                        bottom: 5,
-                        left: 0,
-                        right: 0
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: Math.max(threshold * 1.2, onHand * 1.1), // Show slightly above threshold or current value
-                        grid: {
-                            display: false,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            display: false // Hide axis ticks
-                        },
-                        border: {
-                            display: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            display: false // Hide axis ticks
-                        },
-                        border: {
-                            display: false
-                        }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        enabled: false
-                    },
-                    legend: {
-                        display: false
-                    },
-                    title: {
-                        display: false
-                    },
-                    // Custom plugin to draw threshold line
-                    threshold: {
-                        threshold: threshold,
-                        lineWidth: 2,
-                        lineColor: 'rgba(255, 255, 255, 0.5)',
-                        labelColor: 'rgba(255, 255, 255, 0.7)',
-                        labelSize: 9
-                    }
-                },
-                animation: {
-                    duration: 600
-                }
-            },
-            plugins: [{
-                id: 'threshold',
-                beforeDraw: function(chart) {
-                    if (chart.options.plugins.threshold) {
-                        const ctx = chart.ctx;
-                        const threshold = chart.options.plugins.threshold.threshold;
-                        const yAxis = chart.scales.y;
-                        const thresholdY = yAxis.getPixelForValue(threshold);
-                        const lineWidth = chart.options.plugins.threshold.lineWidth || 2;
-                        const lineColor = chart.options.plugins.threshold.lineColor || 'rgba(255, 255, 255, 0.5)';
-                        const labelColor = chart.options.plugins.threshold.labelColor || 'rgba(255, 255, 255, 0.7)';
-                        const labelSize = chart.options.plugins.threshold.labelSize || 9;
-                        
-                        // Draw threshold line
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.moveTo(chart.chartArea.left, thresholdY);
-                        ctx.lineTo(chart.chartArea.right, thresholdY);
-                        ctx.lineWidth = lineWidth;
-                        ctx.strokeStyle = lineColor;
-                        ctx.setLineDash([4, 2]); // Dashed line
-                        ctx.stroke();
-                        ctx.restore();
-                        
-                        // Add small threshold label
-                        ctx.save();
-                        ctx.fillStyle = labelColor;
-                        ctx.font = `${labelSize}px Inter`;
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'bottom';
-                        ctx.fillText(`T: ${threshold}`, chart.chartArea.left + 5, thresholdY - 2);
-                        ctx.restore();
-                    }
-                }
-            }]
-        });
-        
-        // Add text overlay
-        addTextOverlay(canvas, onHand, threshold, incoming);
-        
-        canvas.dataset.initialized = 'true';
-        
-    } catch (error) {
-        console.error('Chart error:', error);
-        createFallbackDisplay(canvas, onHand, threshold);
+        // Position stock display just above the fill level for non-zero values
+        stockDisplay.style.bottom = `${Math.min(Math.max(percentage, 20), 90)}%`;
     }
+    
+    // Set threshold line position - percentage from bottom
+    thresholdLine.style.bottom = `${Math.min(Math.round((threshold / Math.max(threshold, onHand * 1.2)) * 100), 100)}%`;
+    
+    // Update stock display
+    stockDisplay.textContent = onHand;
+    
+    // Update percentage display
+    percentageDisplay.textContent = `${percentage}%`;
 }
 
-// Add text overlay for values
-function addTextOverlay(canvas, onHand, threshold, incoming) {
-    // Remove any existing overlay
-    const existingOverlay = canvas.parentElement.querySelector('.cylinder-overlay');
-    if (existingOverlay) {
-        canvas.parentElement.removeChild(existingOverlay);
-    }
-
-    const overlayDiv = document.createElement('div');
-    overlayDiv.className = 'cylinder-overlay';
-    overlayDiv.style.position = 'absolute';
-    overlayDiv.style.top = '0';
-    overlayDiv.style.left = '0';
-    overlayDiv.style.width = '100%';
-    overlayDiv.style.height = '100%';
-    overlayDiv.style.pointerEvents = 'none';
-    
-    // Top right counter
-    const valueContainer = document.createElement('div');
-    valueContainer.className = 'value-container';
-    valueContainer.style.position = 'absolute';
-    valueContainer.style.top = '5px';
-    valueContainer.style.right = '5px';
-    valueContainer.style.display = 'flex';
-    valueContainer.style.flexDirection = 'column';
-    valueContainer.style.alignItems = 'flex-end';
-    valueContainer.style.backgroundColor = 'rgba(45, 45, 45, 0.7)';
-    valueContainer.style.backdropFilter = 'blur(2px)';
-    valueContainer.style.borderRadius = '4px';
-    valueContainer.style.padding = '2px 5px';
-    
-    // Determine text color based on stock level
-    const ratio = onHand / Math.max(1, threshold);
-    let textColor = '#FF5252'; // Red
-    
-    if (ratio >= 0.5) {
-        textColor = '#00C853'; // Green
-    } else if (ratio >= 0.2) {
-        textColor = '#FFC107'; // Yellow
-    }
-    
-    // Value text
-    const valueText = document.createElement('div');
-    valueText.style.fontSize = '16px';
-    valueText.style.fontWeight = '600';
-    valueText.style.lineHeight = '1.1';
-    valueText.style.color = textColor;
-    valueText.textContent = onHand;
-    
-    valueContainer.appendChild(valueText);
-    
-    // Add incoming indicator if there's incoming stock
-    if (incoming > 0) {
-        const incomingText = document.createElement('div');
-        incomingText.style.fontSize = '9px';
-        incomingText.style.lineHeight = '1';
-        incomingText.style.color = '#42A5F5';
-        incomingText.innerHTML = `+${incoming}`;
-        valueContainer.appendChild(incomingText);
-    }
-    
-    overlayDiv.appendChild(valueContainer);
-    
-    // Parent container should be positioned relatively
-    canvas.parentElement.style.position = 'relative';
-    canvas.parentElement.appendChild(overlayDiv);
+// Initialize lazy loading of cylinders (keeping this function for compatibility)
+function initLazyLoadingCharts() {
+    // All cylinders are now created directly when the card is created
+    // No need for additional lazy loading logic
 }
 
-// Create a fallback text display when Chart.js fails
-function createFallbackDisplay(canvas, onHand, threshold) {
-    // Create fallback display with text
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'cylinder-error';
-    errorMsg.style.padding = '10px';
-    errorMsg.style.display = 'flex';
-    errorMsg.style.flexDirection = 'column';
-    errorMsg.style.alignItems = 'center';
-    errorMsg.style.justifyContent = 'center';
-    
-    // Style based on stock level
-    const ratio = onHand / Math.max(1, threshold);
-    let textColor = '#FF5252'; // Red
-    
-    if (ratio >= 0.5) {
-        textColor = '#00C853'; // Green
-    } else if (ratio >= 0.2) {
-        textColor = '#FFC107'; // Yellow
-    }
-    
-    // Create a simple visual bar
-    const barContainer = document.createElement('div');
-    barContainer.style.width = '60%';
-    barContainer.style.height = '50px';
-    barContainer.style.backgroundColor = '#333';
-    barContainer.style.borderRadius = '3px';
-    barContainer.style.position = 'relative';
-    barContainer.style.marginBottom = '5px';
-    
-    const fillBar = document.createElement('div');
-    fillBar.style.position = 'absolute';
-    fillBar.style.bottom = '0';
-    fillBar.style.left = '0';
-    fillBar.style.width = '100%';
-    fillBar.style.height = `${Math.min(100, Math.round((onHand / threshold) * 100))}%`;
-    fillBar.style.backgroundColor = textColor;
-    fillBar.style.borderRadius = '3px';
-    
-    const thresholdLine = document.createElement('div');
-    thresholdLine.style.position = 'absolute';
-    thresholdLine.style.bottom = '100%';
-    thresholdLine.style.left = '0';
-    thresholdLine.style.width = '100%';
-    thresholdLine.style.height = '1px';
-    thresholdLine.style.borderBottom = '2px dashed rgba(255,255,255,0.5)';
-    
-    barContainer.appendChild(fillBar);
-    barContainer.appendChild(thresholdLine);
-    
-    // Value text
-    const valueText = document.createElement('div');
-    valueText.style.fontSize = '16px';
-    valueText.style.fontWeight = '600';
-    valueText.style.color = textColor;
-    valueText.textContent = onHand;
-    
-    // Threshold text
-    const thresholdText = document.createElement('div');
-    thresholdText.style.fontSize = '10px';
-    thresholdText.style.color = '#B0B0B0';
-    thresholdText.textContent = `Threshold: ${threshold}`;
-    
-    errorMsg.appendChild(barContainer);
-    errorMsg.appendChild(valueText);
-    errorMsg.appendChild(thresholdText);
-    
-    canvas.parentElement.style.position = 'relative';
-    canvas.style.display = 'none'; // Hide the canvas
-    canvas.parentElement.appendChild(errorMsg);
-    canvas.dataset.initialized = 'true';
+// Function to update product filters
+function updateProductTypeFilter(data) {
+    // ... existing code ...
 }
 
 // Show tooltip
@@ -907,51 +757,69 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
-// Function to implement lazy loading for charts (simplified since Chart.js doesn't have WebGL context limits)
-function initLazyLoadingCharts() {
-    // Set up intersection observer to detect when charts are visible
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const canvas = entry.target;
-                
-                // Only initialize charts that haven't been initialized yet
-                if (canvas.dataset.initialized !== 'true') {
-                    const location = canvas.dataset.location;
-                    
-                    if (location === 'el-monte') {
-                        const data = JSON.parse(canvas.dataset.elMonte || '{}');
-                        createCylinderChart(
-                            canvas, 
-                            data.onHand, 
-                            data.threshold,
-                            data.incoming,
-                            data.incomingDate
-                        );
-                    } else if (location === 'whittier') {
-                        const data = JSON.parse(canvas.dataset.whittier || '{}');
-                        createCylinderChart(
-                            canvas, 
-                            data.onHand, 
-                            data.threshold,
-                            data.incoming,
-                            data.incomingDate
-                        );
-                    }
-                }
-                
-                // Stop observing this element
-                observer.unobserve(canvas);
-            }
-        });
-    }, {
-        root: null, // viewport
-        rootMargin: '100px', // load charts that are within 100px of viewport
-        threshold: 0.1 // trigger when at least 10% of the element is visible
-    });
-    
-    // Observe all cylinder charts that need to be rendered
-    document.querySelectorAll('.cylinder-chart:not([data-initialized="true"])').forEach(canvas => {
-        observer.observe(canvas);
-    });
-} 
+// Add necessary styles for autocomplete
+const autocompleteStyles = `
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-items {
+    position: absolute;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 5px 5px;
+    border-top: none;
+    box-shadow: 0 4px 8px var(--shadow-color);
+    display: none;
+}
+
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover, .autocomplete-item.selected {
+    background-color: rgba(65, 105, 225, 0.2);
+    color: var(--text-primary);
+}
+
+.autocomplete-highlight {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+/* Pagination Styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 15px 0;
+}
+
+#pageInfo {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+`;
+
+// Add the styles to the header
+const styleElement = document.createElement('style');
+styleElement.textContent = autocompleteStyles;
+document.head.appendChild(styleElement); 
