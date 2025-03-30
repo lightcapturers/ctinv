@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>CT Inventory</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active"><a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Inventory Overview</a></li>
+                    <li><a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="2" x="6" y="10" rx="1"/></svg> El Monte Inventory</a></li>
+                    <li><a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="2" x="6" y="10" rx="1"/></svg> Whittier Inventory</a></li>
+                    <li><a href="#"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg> Low Stock Items</a></li>
+                </ul>
+            </nav>
+        </div>
+        <main>
+            <header>
+                <div class="header-title">
+                    <h2>Inventory Overview</h2>
+                </div>
+                <div class="header-actions">
+                    <button id="refreshData" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                        Refresh Data
+                    </button>
+                </div>
+            </header>
+
+            <div class="metrics-container">
+                <div class="metric-card">
+                    <div class="metric-icon total-products">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-package"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                    </div>
+                    <div class="metric-content">
+                        <h3>Total Products</h3>
+                        <p id="totalProducts">0</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon el-monte">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="2" x="6" y="10" rx="1"/></svg>
+                    </div>
+                    <div class="metric-content">
+                        <h3>El Monte</h3>
+                        <p id="elMonteStock">0</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon whittier">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="2" x="6" y="10" rx="1"/></svg>
+                    </div>
+                    <div class="metric-content">
+                        <h3>Whittier</h3>
+                        <p id="whittierStock">0</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon low-stock">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    </div>
+                    <div class="metric-content">
+                        <h3>Low Stock</h3>
+                        <p id="lowStockCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-container">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="productTypeFilter">Product Type</label>
+                        <select id="productTypeFilter" class="filter-input">
+                            <option value="">All Types</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="skuFilter">SKU</label>
+                        <input type="text" id="skuFilter" class="filter-input" placeholder="Search SKUs...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="productTitleFilter">Product Title</label>
+                        <input type="text" id="productTitleFilter" class="filter-input" placeholder="Search product titles...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="stockLevelFilter">Stock Level</label>
+                        <select id="stockLevelFilter" class="filter-input">
+                            <option value="">All Levels</option>
+                            <option value="low">Low Stock</option>
+                            <option value="medium">Medium Stock</option>
+                            <option value="high">High Stock</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button id="applyFilters" class="btn btn-primary">Apply Filters</button>
+                    <button id="clearFilters" class="btn btn-secondary">Clear Filters</button>
+                </div>
+            </div>
+
+            <div class="product-grid" id="productGrid">
+                <!-- Product cards will be dynamically inserted here -->
+            </div>
+
+            <div class="pagination">
+                <button id="prevPage" class="btn btn-secondary">Previous</button>
+                <span id="pageInfo">Page 1 of 1</span>
+                <button id="nextPage" class="btn btn-secondary">Next</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Product card template -->
+    <template id="productCardTemplate">
+        <div class="product-card">
+            <div class="product-image">
+                <img src="" alt="Product Image">
+            </div>
+            <div class="product-info">
+                <h3 class="product-title"></h3>
+                <p class="product-type"></p>
+                <p class="product-sku"></p>
+            </div>
+            <div class="inventory-visualization">
+                <div class="location-inventory">
+                    <h4>El Monte</h4>
+                    <div class="cylinder-container">
+                        <canvas class="cylinder-chart"></canvas>
+                    </div>
+                    <div class="inventory-details">
+                        <p class="onhand"></p>
+                        <p class="threshold"></p>
+                    </div>
+                </div>
+                <div class="location-inventory">
+                    <h4>Whittier</h4>
+                    <div class="cylinder-container">
+                        <canvas class="cylinder-chart"></canvas>
+                    </div>
+                    <div class="inventory-details">
+                        <p class="onhand"></p>
+                        <p class="threshold"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+</html> 

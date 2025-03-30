@@ -1,0 +1,14 @@
+{
+  "name": "inventory-dashboard",
+  "version": "1.0.0",
+  "description": "A beautiful dark-themed inventory dashboard for tracking stock across multiple locations",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
