@@ -5,7 +5,8 @@ let uniqueProductTypes = new Set();
 let uniqueSKUs = new Set();
 let uniqueProductTitles = new Set();
 let currentPage = 1;
-const itemsPerPage = 8; // Reduced items per page for a more compact view
+// Remove itemsPerPage limit to show all items
+// const itemsPerPage = 8; // Reduced items per page for a more compact view
 const elMonteLocationId = 'gid://shopify/Location/68455891180';
 const whittierLocationId = 'gid://shopify/Location/71820017900';
 const API_ENDPOINT = '/api/inventory'; // Endpoint to fetch data from server
@@ -20,12 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('refreshData').addEventListener('click', refreshData);
     document.getElementById('applyFilters').addEventListener('click', applyFilters);
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
-    document.getElementById('prevPage').addEventListener('click', () => navigatePage(-1));
-    document.getElementById('nextPage').addEventListener('click', () => navigatePage(1));
+    
+    // Remove pagination event listeners
+    // document.getElementById('prevPage').addEventListener('click', () => navigatePage(-1));
+    // document.getElementById('nextPage').addEventListener('click', () => navigatePage(1));
     
     // Add autocomplete event listeners
     setupAutocomplete('skuFilter', 'skuAutocomplete', uniqueSKUs);
     setupAutocomplete('productTitleFilter', 'productTitleAutocomplete', uniqueProductTitles);
+    
+    // Hide pagination elements
+    document.querySelector('.pagination').style.display = 'none';
 });
 
 // Load inventory data from API
@@ -296,7 +302,8 @@ function setupAutocomplete(inputId, autocompleteId, dataSet) {
 function updateDashboard() {
     updateMetrics();
     renderProductCards();
-    updatePagination();
+    // Remove updatePagination call
+    // updatePagination();
 }
 
 // Update metrics section
@@ -342,9 +349,8 @@ function renderProductCards() {
     const productGrid = document.getElementById('productGrid');
     productGrid.innerHTML = '';
     
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentPageData = filteredData.slice(startIndex, endIndex);
+    // No longer slice the data - show all items
+    const currentPageData = filteredData;
     
     if (currentPageData.length === 0) {
         const noResultsMsg = document.createElement('div');
@@ -359,33 +365,9 @@ function renderProductCards() {
         productGrid.appendChild(card);
     });
 
-    // Important: Wait for DOM to update before creating cylinder charts
+    // Important: Use lazy loading instead of rendering all charts at once
     requestAnimationFrame(() => {
-        document.querySelectorAll('.cylinder-chart').forEach(canvas => {
-            if (canvas.dataset.initialized !== 'true') {
-                const elMonteData = JSON.parse(canvas.dataset.elMonte || '{}');
-                const whittierData = JSON.parse(canvas.dataset.whittier || '{}');
-                
-                if (canvas.dataset.location === 'el-monte') {
-                    createCylinderChart(
-                        canvas, 
-                        elMonteData.onHand, 
-                        elMonteData.threshold,
-                        elMonteData.incoming,
-                        elMonteData.incomingDate
-                    );
-                } else if (canvas.dataset.location === 'whittier') {
-                    createCylinderChart(
-                        canvas, 
-                        whittierData.onHand, 
-                        whittierData.threshold,
-                        whittierData.incoming,
-                        whittierData.incomingDate
-                    );
-                }
-                canvas.dataset.initialized = 'true';
-            }
-        });
+        initLazyLoadingCharts();
     });
 }
 
@@ -429,9 +411,15 @@ function createProductCard(product) {
     
     card.classList.add(borderColor);
     
-    // Set product information
-    cardClone.querySelector('.product-title').textContent = product.productTitle;
-    cardClone.querySelector('.variant-title').textContent = product.variantTitle;
+    // Set product information - truncate long titles
+    const productTitle = cardClone.querySelector('.product-title');
+    productTitle.textContent = truncateText(product.productTitle, 30);
+    productTitle.title = product.productTitle; // Set full title as tooltip
+    
+    const variantTitle = cardClone.querySelector('.variant-title');
+    variantTitle.textContent = truncateText(product.variantTitle, 30);
+    variantTitle.title = product.variantTitle; // Set full variant as tooltip
+    
     cardClone.querySelector('.product-type').textContent = product.productType;
     cardClone.querySelector('.product-sku').textContent = `SKU: ${product.sku}`;
     
@@ -445,12 +433,12 @@ function createProductCard(product) {
         imgElement.alt = 'Product image placeholder';
     }
     
-    // Set El Monte inventory details
+    // Set El Monte inventory details - simplify display
     const elMonteContainer = cardClone.querySelectorAll('.location-inventory')[0];
     elMonteContainer.querySelector('.onhand').textContent = `On Hand: ${elMonteLocation.onHand}`;
     elMonteContainer.querySelector('.threshold').textContent = `Threshold: ${elMonteLocation.threshold}`;
     
-    // Set Whittier inventory details
+    // Set Whittier inventory details - simplify display
     const whittierContainer = cardClone.querySelectorAll('.location-inventory')[1];
     whittierContainer.querySelector('.onhand').textContent = `On Hand: ${whittierLocation.onHand}`;
     whittierContainer.querySelector('.threshold').textContent = `Threshold: ${whittierLocation.threshold}`;
@@ -477,211 +465,178 @@ function createProductCard(product) {
     return cardClone;
 }
 
-// Create a 3D cylinder visualization using Three.js
+// Helper function to truncate text with ellipsis
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
+// Create visualization chart
 function createCylinderChart(canvas, onHand, threshold, incoming = 0, incomingDate = '') {
-    if (!canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) {
-        console.error('Invalid canvas element or dimensions:', canvas);
+    if (!canvas) {
+        console.error('Canvas element is null or undefined');
         return;
     }
 
+    // Remove any existing chart
+    Chart.getChart(canvas)?.destroy();
+    
+    // Remove any existing error messages
+    const previousError = canvas.parentElement.querySelector('.cylinder-error');
+    if (previousError) {
+        canvas.parentElement.removeChild(previousError);
+    }
+
     try {
-        // Set positive values for calculations
-        onHand = Math.max(0, onHand);
-        threshold = Math.max(1, threshold); // Ensure threshold is at least 1
-        incoming = Math.max(0, incoming);
+        // Normalize values for calculations
+        onHand = Math.max(0, parseInt(onHand) || 0);
+        threshold = Math.max(1, parseInt(threshold) || 1);
         
-        // Calculate height percentages
-        const maxHeight = 1.2; // Taller cylinder
-        const onHandPercent = Math.min(onHand / threshold, 1.0);
-        const incomingPercent = incoming > 0 ? (incoming / threshold) : 0;
+        // Calculate percentage for color determination
+        const percentage = Math.min(Math.round((onHand / threshold) * 100), 100);
         
         // Determine color based on stock level
         let color;
-        if (onHandPercent < 0.2) {
-            color = 0xFF5252; // Red
-        } else if (onHandPercent < 0.5) {
-            color = 0xFFC107; // Yellow
+        if (percentage < 20) {
+            color = '#FF5252'; // Red
+        } else if (percentage < 50) {
+            color = '#FFC107'; // Yellow
         } else {
-            color = 0x00C853; // Green
+            color = '#00C853'; // Green
         }
         
-        // Set up scene
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        
-        // Check if the canvas already has a renderer attached
-        let renderer;
-        if (canvas.renderer) {
-            renderer = canvas.renderer;
-        } else {
-            renderer = new THREE.WebGLRenderer({ 
-                canvas: canvas, 
-                alpha: true, 
-                antialias: true,
-                preserveDrawingBuffer: true 
-            });
-            canvas.renderer = renderer;
-        }
-        
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        renderer.setClearColor(0x000000, 0); // Transparent background
-        
-        // Add lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        directionalLight.position.set(1, 1, 1);
-        scene.add(directionalLight);
-        
-        // Create cylinder for base (empty/total capacity)
-        const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, maxHeight, 32, 1, false);
-        
-        // Special handling for empty cylinder
-        if (onHand === 0) {
-            // Empty cylinder with light red color (no EMPTY text)
-            const baseMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFF5252,
-                transparent: true, 
-                opacity: 0.2,
-                wireframe: false
-            });
-            const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
-            scene.add(baseCylinder);
-            
-            // Remove any existing empty indicator
-            const parentDiv = canvas.parentElement;
-            const emptyIndicator = parentDiv.querySelector('.cylinder-empty-indicator');
-            if (emptyIndicator) {
-                parentDiv.removeChild(emptyIndicator);
-            }
-        } else {
-            // Normal cylinder (not empty)
-            // Remove empty indicator if it exists
-            const parentDiv = canvas.parentElement;
-            const emptyIndicator = parentDiv.querySelector('.cylinder-empty-indicator');
-            if (emptyIndicator) {
-                parentDiv.removeChild(emptyIndicator);
-            }
-            
-            const baseMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x333333, 
-                transparent: true, 
-                opacity: 0.15,
-                wireframe: false
-            });
-            const baseCylinder = new THREE.Mesh(baseGeometry, baseMaterial);
-            scene.add(baseCylinder);
-        }
-        
-        // Create cylinder for on-hand quantity
-        if (onHandPercent > 0) {
-            const onHandHeight = onHandPercent * maxHeight;
-            const onHandGeometry = new THREE.CylinderGeometry(0.4, 0.4, onHandHeight, 32, 1, false);
-            
-            // Use a solid color with PhongMaterial instead of ShaderMaterial for better appearance
-            const onHandMaterial = new THREE.MeshPhongMaterial({ 
-                color: color,
-                transparent: true,
-                opacity: 0.9,
-                shininess: 30
-            });
-            
-            const onHandCylinder = new THREE.Mesh(onHandGeometry, onHandMaterial);
-            
-            // Position from bottom
-            onHandCylinder.position.y = (onHandHeight - maxHeight) / 2;
-            scene.add(onHandCylinder);
-        }
-        
-        // Create threshold line
-        const thresholdYPosition = 0; // Center of cylinder
-        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-0.5, thresholdYPosition, 0),
-            new THREE.Vector3(0.5, thresholdYPosition, 0)
-        ]);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF, opacity: 0.7, transparent: true, linewidth: 2 });
-        const thresholdLine = new THREE.Line(lineGeometry, lineMaterial);
-        thresholdLine.position.z = 0.41; // Slightly in front of cylinder
-        scene.add(thresholdLine);
-        
-        // Create cylinder for incoming quantity
-        if (incomingPercent > 0) {
-            const incomingHeight = incomingPercent * maxHeight;
-            const incomingGeometry = new THREE.CylinderGeometry(0.4, 0.4, incomingHeight, 32, 1, false);
-            
-            // Use solid material for incoming cylinder as well
-            const incomingMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x4169E1, // Blue
-                transparent: true,
-                opacity: 0.8,
-                shininess: 30
-            });
-            
-            const incomingCylinder = new THREE.Mesh(incomingGeometry, incomingMaterial);
-            
-            // Position on top of on-hand cylinder or at bottom if no on-hand
-            const offsetY = onHandPercent > 0 ? 
-                onHandPercent * maxHeight + incomingHeight / 2 - maxHeight / 2 :
-                incomingHeight / 2 - maxHeight / 2;
-            
-            incomingCylinder.position.y = offsetY;
-            
-            // Add incoming metadata for tooltip
-            incomingCylinder.userData = { 
-                incoming: incoming,
-                incomingDate: incomingDate
-            };
-            
-            scene.add(incomingCylinder);
-            
-            // Add tooltip functionality
-            canvas.addEventListener('mousemove', (event) => {
-                const rect = canvas.getBoundingClientRect();
-                const mouse = new THREE.Vector2(
-                    ((event.clientX - rect.left) / canvas.clientWidth) * 2 - 1,
-                    -((event.clientY - rect.top) / canvas.clientHeight) * 2 + 1
-                );
-                
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, camera);
-                
-                const intersects = raycaster.intersectObject(incomingCylinder);
-                
-                if (intersects.length > 0) {
-                    showTooltip(
-                        event.clientX, 
-                        event.clientY, 
-                        `Incoming: ${incoming} (${incomingDate || 'No date'})`
-                    );
-                } else {
-                    hideTooltip();
+        // Create vertical bar chart
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: [''], // Single empty label
+                datasets: [{
+                    label: 'Stock',
+                    data: [onHand],
+                    backgroundColor: color,
+                    borderWidth: 0,
+                    borderRadius: 4,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 20,    // Add padding for threshold line
+                        bottom: 5,
+                        left: 0,
+                        right: 0
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: Math.max(threshold * 1.2, onHand * 1.1), // Show slightly above threshold or current value
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            display: false // Hide axis ticks
+                        },
+                        border: {
+                            display: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            display: false // Hide axis ticks
+                        },
+                        border: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        enabled: false
+                    },
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: false
+                    },
+                    // Custom plugin to draw threshold line
+                    threshold: {
+                        threshold: threshold,
+                        lineWidth: 2,
+                        lineColor: 'rgba(255, 255, 255, 0.5)',
+                        labelColor: 'rgba(255, 255, 255, 0.7)',
+                        labelSize: 9
+                    }
+                },
+                animation: {
+                    duration: 600
                 }
-            });
-            
-            canvas.addEventListener('mouseleave', hideTooltip);
-        }
+            },
+            plugins: [{
+                id: 'threshold',
+                beforeDraw: function(chart) {
+                    if (chart.options.plugins.threshold) {
+                        const ctx = chart.ctx;
+                        const threshold = chart.options.plugins.threshold.threshold;
+                        const yAxis = chart.scales.y;
+                        const thresholdY = yAxis.getPixelForValue(threshold);
+                        const lineWidth = chart.options.plugins.threshold.lineWidth || 2;
+                        const lineColor = chart.options.plugins.threshold.lineColor || 'rgba(255, 255, 255, 0.5)';
+                        const labelColor = chart.options.plugins.threshold.labelColor || 'rgba(255, 255, 255, 0.7)';
+                        const labelSize = chart.options.plugins.threshold.labelSize || 9;
+                        
+                        // Draw threshold line
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(chart.chartArea.left, thresholdY);
+                        ctx.lineTo(chart.chartArea.right, thresholdY);
+                        ctx.lineWidth = lineWidth;
+                        ctx.strokeStyle = lineColor;
+                        ctx.setLineDash([4, 2]); // Dashed line
+                        ctx.stroke();
+                        ctx.restore();
+                        
+                        // Add small threshold label
+                        ctx.save();
+                        ctx.fillStyle = labelColor;
+                        ctx.font = `${labelSize}px Inter`;
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(`T: ${threshold}`, chart.chartArea.left + 5, thresholdY - 2);
+                        ctx.restore();
+                    }
+                }
+            }]
+        });
         
-        // Add a slight rotation for better 3D perspective
-        scene.rotation.y = 0.2;
-        
-        // Position camera
-        camera.position.set(0, 0, 2.5);
-        camera.lookAt(0, 0, 0);
-        
-        // Static render without animation
-        renderer.render(scene, camera);
-        
-        // Add numeric indicators
+        // Add text overlay
         addTextOverlay(canvas, onHand, threshold, incoming);
         
+        canvas.dataset.initialized = 'true';
+        
     } catch (error) {
-        console.error('Error creating cylinder chart:', error);
+        console.error('Chart error:', error);
+        createFallbackDisplay(canvas, onHand, threshold);
     }
 }
 
 // Add text overlay for values
 function addTextOverlay(canvas, onHand, threshold, incoming) {
+    // Remove any existing overlay
+    const existingOverlay = canvas.parentElement.querySelector('.cylinder-overlay');
+    if (existingOverlay) {
+        canvas.parentElement.removeChild(existingOverlay);
+    }
+
     const overlayDiv = document.createElement('div');
     overlayDiv.className = 'cylinder-overlay';
     overlayDiv.style.position = 'absolute';
@@ -690,36 +645,129 @@ function addTextOverlay(canvas, onHand, threshold, incoming) {
     overlayDiv.style.width = '100%';
     overlayDiv.style.height = '100%';
     overlayDiv.style.pointerEvents = 'none';
-    overlayDiv.style.display = 'flex';
-    overlayDiv.style.flexDirection = 'column';
-    overlayDiv.style.justifyContent = 'center';
-    overlayDiv.style.alignItems = 'center';
-    overlayDiv.style.color = 'white';
-    overlayDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
     
-    // Threshold label (middle)
-    const thresholdLabel = document.createElement('div');
-    thresholdLabel.textContent = threshold;
-    thresholdLabel.style.position = 'absolute';
-    thresholdLabel.style.top = '50%';
-    thresholdLabel.style.transform = 'translateY(-50%)';
-    thresholdLabel.style.fontSize = '14px';
-    overlayDiv.appendChild(thresholdLabel);
+    // Top right counter
+    const valueContainer = document.createElement('div');
+    valueContainer.className = 'value-container';
+    valueContainer.style.position = 'absolute';
+    valueContainer.style.top = '5px';
+    valueContainer.style.right = '5px';
+    valueContainer.style.display = 'flex';
+    valueContainer.style.flexDirection = 'column';
+    valueContainer.style.alignItems = 'flex-end';
+    valueContainer.style.backgroundColor = 'rgba(45, 45, 45, 0.7)';
+    valueContainer.style.backdropFilter = 'blur(2px)';
+    valueContainer.style.borderRadius = '4px';
+    valueContainer.style.padding = '2px 5px';
     
-    // On-hand label (bottom)
-    if (onHand > 0) {
-        const onHandLabel = document.createElement('div');
-        onHandLabel.textContent = onHand;
-        onHandLabel.style.position = 'absolute';
-        onHandLabel.style.bottom = '20%';
-        onHandLabel.style.fontSize = '16px';
-        onHandLabel.style.fontWeight = 'bold';
-        overlayDiv.appendChild(onHandLabel);
+    // Determine text color based on stock level
+    const ratio = onHand / Math.max(1, threshold);
+    let textColor = '#FF5252'; // Red
+    
+    if (ratio >= 0.5) {
+        textColor = '#00C853'; // Green
+    } else if (ratio >= 0.2) {
+        textColor = '#FFC107'; // Yellow
     }
+    
+    // Value text
+    const valueText = document.createElement('div');
+    valueText.style.fontSize = '16px';
+    valueText.style.fontWeight = '600';
+    valueText.style.lineHeight = '1.1';
+    valueText.style.color = textColor;
+    valueText.textContent = onHand;
+    
+    valueContainer.appendChild(valueText);
+    
+    // Add incoming indicator if there's incoming stock
+    if (incoming > 0) {
+        const incomingText = document.createElement('div');
+        incomingText.style.fontSize = '9px';
+        incomingText.style.lineHeight = '1';
+        incomingText.style.color = '#42A5F5';
+        incomingText.innerHTML = `+${incoming}`;
+        valueContainer.appendChild(incomingText);
+    }
+    
+    overlayDiv.appendChild(valueContainer);
     
     // Parent container should be positioned relatively
     canvas.parentElement.style.position = 'relative';
     canvas.parentElement.appendChild(overlayDiv);
+}
+
+// Create a fallback text display when Chart.js fails
+function createFallbackDisplay(canvas, onHand, threshold) {
+    // Create fallback display with text
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'cylinder-error';
+    errorMsg.style.padding = '10px';
+    errorMsg.style.display = 'flex';
+    errorMsg.style.flexDirection = 'column';
+    errorMsg.style.alignItems = 'center';
+    errorMsg.style.justifyContent = 'center';
+    
+    // Style based on stock level
+    const ratio = onHand / Math.max(1, threshold);
+    let textColor = '#FF5252'; // Red
+    
+    if (ratio >= 0.5) {
+        textColor = '#00C853'; // Green
+    } else if (ratio >= 0.2) {
+        textColor = '#FFC107'; // Yellow
+    }
+    
+    // Create a simple visual bar
+    const barContainer = document.createElement('div');
+    barContainer.style.width = '60%';
+    barContainer.style.height = '50px';
+    barContainer.style.backgroundColor = '#333';
+    barContainer.style.borderRadius = '3px';
+    barContainer.style.position = 'relative';
+    barContainer.style.marginBottom = '5px';
+    
+    const fillBar = document.createElement('div');
+    fillBar.style.position = 'absolute';
+    fillBar.style.bottom = '0';
+    fillBar.style.left = '0';
+    fillBar.style.width = '100%';
+    fillBar.style.height = `${Math.min(100, Math.round((onHand / threshold) * 100))}%`;
+    fillBar.style.backgroundColor = textColor;
+    fillBar.style.borderRadius = '3px';
+    
+    const thresholdLine = document.createElement('div');
+    thresholdLine.style.position = 'absolute';
+    thresholdLine.style.bottom = '100%';
+    thresholdLine.style.left = '0';
+    thresholdLine.style.width = '100%';
+    thresholdLine.style.height = '1px';
+    thresholdLine.style.borderBottom = '2px dashed rgba(255,255,255,0.5)';
+    
+    barContainer.appendChild(fillBar);
+    barContainer.appendChild(thresholdLine);
+    
+    // Value text
+    const valueText = document.createElement('div');
+    valueText.style.fontSize = '16px';
+    valueText.style.fontWeight = '600';
+    valueText.style.color = textColor;
+    valueText.textContent = onHand;
+    
+    // Threshold text
+    const thresholdText = document.createElement('div');
+    thresholdText.style.fontSize = '10px';
+    thresholdText.style.color = '#B0B0B0';
+    thresholdText.textContent = `Threshold: ${threshold}`;
+    
+    errorMsg.appendChild(barContainer);
+    errorMsg.appendChild(valueText);
+    errorMsg.appendChild(thresholdText);
+    
+    canvas.parentElement.style.position = 'relative';
+    canvas.style.display = 'none'; // Hide the canvas
+    canvas.parentElement.appendChild(errorMsg);
+    canvas.dataset.initialized = 'true';
 }
 
 // Show tooltip
@@ -800,8 +848,8 @@ function applyFilters() {
         return true;
     });
     
-    // Reset to first page and update display
-    currentPage = 1;
+    // No longer reset to first page
+    // currentPage = 1;
     updateDashboard();
 }
 
@@ -818,7 +866,8 @@ function clearFilters() {
     pills.forEach(pill => pill.classList.remove('active'));
     
     filteredData = [...inventoryData];
-    currentPage = 1;
+    // No longer reset to first page
+    // currentPage = 1;
     updateDashboard();
 }
 
@@ -844,28 +893,6 @@ function refreshData() {
     }, 1000);
 }
 
-// Navigate between pages
-function navigatePage(direction) {
-    const newPage = currentPage + direction;
-    const maxPage = Math.ceil(filteredData.length / itemsPerPage);
-    
-    if (newPage >= 1 && newPage <= maxPage) {
-        currentPage = newPage;
-        renderProductCards();
-        updatePagination();
-    }
-}
-
-// Update pagination information
-function updatePagination() {
-    const maxPage = Math.ceil(filteredData.length / itemsPerPage);
-    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${maxPage}`;
-    
-    // Disable/enable buttons as needed
-    document.getElementById('prevPage').disabled = currentPage === 1;
-    document.getElementById('nextPage').disabled = currentPage === maxPage;
-}
-
 // Add styles for the spinning animation
 const style = document.createElement('style');
 style.innerHTML = `
@@ -878,4 +905,53 @@ style.innerHTML = `
         100% { transform: rotate(360deg); }
     }
 `;
-document.head.appendChild(style); 
+document.head.appendChild(style);
+
+// Function to implement lazy loading for charts (simplified since Chart.js doesn't have WebGL context limits)
+function initLazyLoadingCharts() {
+    // Set up intersection observer to detect when charts are visible
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const canvas = entry.target;
+                
+                // Only initialize charts that haven't been initialized yet
+                if (canvas.dataset.initialized !== 'true') {
+                    const location = canvas.dataset.location;
+                    
+                    if (location === 'el-monte') {
+                        const data = JSON.parse(canvas.dataset.elMonte || '{}');
+                        createCylinderChart(
+                            canvas, 
+                            data.onHand, 
+                            data.threshold,
+                            data.incoming,
+                            data.incomingDate
+                        );
+                    } else if (location === 'whittier') {
+                        const data = JSON.parse(canvas.dataset.whittier || '{}');
+                        createCylinderChart(
+                            canvas, 
+                            data.onHand, 
+                            data.threshold,
+                            data.incoming,
+                            data.incomingDate
+                        );
+                    }
+                }
+                
+                // Stop observing this element
+                observer.unobserve(canvas);
+            }
+        });
+    }, {
+        root: null, // viewport
+        rootMargin: '100px', // load charts that are within 100px of viewport
+        threshold: 0.1 // trigger when at least 10% of the element is visible
+    });
+    
+    // Observe all cylinder charts that need to be rendered
+    document.querySelectorAll('.cylinder-chart:not([data-initialized="true"])').forEach(canvas => {
+        observer.observe(canvas);
+    });
+} 
