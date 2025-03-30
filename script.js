@@ -437,6 +437,21 @@ function renderProductCards() {
     });
 }
 
+// Format a date for display
+function formatDate(dateStr) {
+    if (!dateStr) return 'Date not specified';
+    
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+            return dateStr; // If not a valid date, return as is
+        }
+        return date.toLocaleDateString();
+    } catch (e) {
+        return dateStr;
+    }
+}
+
 // Create product card
 function createProductCard(product) {
     // Clone template
@@ -462,6 +477,33 @@ function createProductCard(product) {
     // Get locations
     const elMonteLocation = product.locations.find(location => location.locationId === elMonteLocationId);
     const whittierLocation = product.locations.find(location => location.locationId === whittierLocationId);
+    
+    // Check for any incoming inventory
+    let hasIncoming = false;
+    let totalIncoming = 0;
+    let incomingDate = '';
+    
+    if (elMonteLocation && elMonteLocation.incoming > 0) {
+        hasIncoming = true;
+        totalIncoming += elMonteLocation.incoming;
+        incomingDate = elMonteLocation.incomingDate || '';
+    }
+    
+    if (whittierLocation && whittierLocation.incoming > 0) {
+        hasIncoming = true;
+        totalIncoming += whittierLocation.incoming;
+        if (!incomingDate && whittierLocation.incomingDate) {
+            incomingDate = whittierLocation.incomingDate;
+        }
+    }
+    
+    // Display incoming info badge if there's incoming inventory
+    if (hasIncoming) {
+        const incomingInfo = productCard.querySelector('.incoming-info');
+        const incomingText = incomingInfo.querySelector('.incoming-text');
+        incomingInfo.style.display = 'block';
+        incomingText.textContent = `${totalIncoming} units arriving ${formatDate(incomingDate)}`;
+    }
     
     // Determine overall status for card border
     let cardStatus = 'normal';
@@ -489,7 +531,8 @@ function createProductCard(product) {
             elMonteContainer,
             elMonteLocation.onHand,
             elMonteLocation.threshold,
-            elMonteLocation.incoming
+            elMonteLocation.incoming,
+            elMonteLocation.incomingDate
         );
         
         // Set detail text
@@ -498,7 +541,7 @@ function createProductCard(product) {
     } else {
         // No location data for El Monte
         const elMonteContainer = productCard.querySelector('[data-location="el-monte"]');
-        setupCylinder(elMonteContainer, 0, 5, 0);
+        setupCylinder(elMonteContainer, 0, 5, 0, '');
         
         // Set detail text
         productCard.querySelector('[data-location="el-monte"]').closest('.location-inventory').querySelector('.onhand').textContent = '0';
@@ -512,7 +555,8 @@ function createProductCard(product) {
             whittierContainer,
             whittierLocation.onHand,
             whittierLocation.threshold,
-            whittierLocation.incoming
+            whittierLocation.incoming,
+            whittierLocation.incomingDate
         );
         
         // Set detail text
@@ -521,7 +565,7 @@ function createProductCard(product) {
     } else {
         // No location data for Whittier
         const whittierContainer = productCard.querySelector('[data-location="whittier"]');
-        setupCylinder(whittierContainer, 0, 5, 0);
+        setupCylinder(whittierContainer, 0, 5, 0, '');
         
         // Set detail text
         productCard.querySelector('[data-location="whittier"]').closest('.location-inventory').querySelector('.onhand').textContent = '0';
@@ -538,37 +582,46 @@ function truncateText(text, maxLength) {
 }
 
 // Setup cylinder visualization
-function setupCylinder(containerElement, onHand, threshold, incoming) {
+function setupCylinder(containerElement, onHand, threshold, incoming, incomingDate) {
     const cylinder = containerElement.querySelector('.cylinder');
     const fillElement = cylinder.querySelector('.cylinder-fill');
+    const incomingElement = cylinder.querySelector('.cylinder-incoming');
     const thresholdLine = cylinder.querySelector('.threshold-line');
     const stockDisplay = cylinder.querySelector('.stock-display');
     const percentageDisplay = cylinder.querySelector('.stock-percentage');
     
-    // Clear any previous incoming indicators
+    // Clear any previous incoming indicators or value labels
     const existingIndicator = cylinder.querySelector('.incoming-indicator');
     if (existingIndicator) {
         existingIndicator.remove();
     }
+    
+    // Remove existing value labels
+    const existingValues = cylinder.querySelectorAll('.cylinder-value');
+    existingValues.forEach(el => el.remove());
     
     // Normalize values
     onHand = Math.max(0, parseInt(onHand) || 0);
     threshold = Math.max(1, parseInt(threshold) || 5); // Default threshold to 5 if invalid
     incoming = Math.max(0, parseInt(incoming) || 0);
     
-    // Calculate percentage
-    const percentage = Math.min(Math.round((onHand / threshold) * 100), 100);
+    // Format incomingDate properly
+    const formattedIncomingDate = formatDate(incomingDate);
     
-    // Add incoming indicator if applicable
-    if (incoming > 0) {
-        const incomingIndicator = document.createElement('div');
-        incomingIndicator.className = 'incoming-indicator';
-        incomingIndicator.textContent = `+${incoming}`;
-        cylinder.appendChild(incomingIndicator);
-    }
+    // Calculate percentages
+    const currentPercentage = Math.min(Math.round((onHand / threshold) * 100), 100);
+    const totalPercentage = Math.min(Math.round(((onHand + incoming) / threshold) * 100), 100);
+    const incomingPercentage = totalPercentage - currentPercentage;
     
     // Remove any existing classes
-    fillElement.classList.remove('low', 'medium', 'good', 'empty');
+    fillElement.classList.remove('low', 'medium', 'good', 'empty', 'has-incoming');
+    
+    // Hide the stock display by default when we're using value labels inside the cylinder
+    if (incoming > 0 || onHand > 0) {
+        stockDisplay.style.display = 'none';
+    } else {
+        stockDisplay.style.display = 'block';
+    }
     
     // Set appropriate class based on stock level
     if (onHand === 0) {
@@ -579,34 +632,84 @@ function setupCylinder(containerElement, onHand, threshold, incoming) {
         // Position the stock display in the middle of cylinder for empty state
         stockDisplay.style.bottom = '50%';
         stockDisplay.style.transform = 'translateY(50%)';
+        stockDisplay.style.display = 'block'; // Always show the 0 for empty cylinders
     } else {
         // Set fill height based on percentage for non-zero values
-        fillElement.style.height = `${percentage}%`;
-        stockDisplay.style.color = 'white';
-        stockDisplay.style.textShadow = '0 1px 2px rgba(0, 0, 0, 0.5)';
-        percentageDisplay.style.color = 'var(--text-secondary)';
-        stockDisplay.style.transform = '';
+        fillElement.style.height = `${currentPercentage}%`;
         
-        if (percentage < 25) {
+        // Add value label to the fill section
+        const fillValue = document.createElement('div');
+        fillValue.className = 'cylinder-value';
+        fillValue.textContent = onHand;
+        fillElement.appendChild(fillValue);
+        
+        if (currentPercentage < 25) {
             fillElement.classList.add('low');
-        } else if (percentage < 60) {
+        } else if (currentPercentage < 60) {
             fillElement.classList.add('medium');
         } else {
             fillElement.classList.add('good');
         }
-        
-        // Position stock display just above the fill level for non-zero values
-        stockDisplay.style.bottom = `${Math.min(Math.max(percentage, 20), 90)}%`;
     }
     
-    // Set threshold line position - percentage from bottom
-    thresholdLine.style.bottom = `${Math.min(Math.round((threshold / Math.max(threshold, onHand * 1.2)) * 100), 100)}%`;
+    // Set threshold line position
+    thresholdLine.style.bottom = `${Math.min(Math.round((threshold / Math.max(threshold, (onHand + incoming) * 1.2)) * 100), 100)}%`;
     
-    // Update stock display
+    // Handle incoming inventory visualization
+    if (incoming > 0) {
+        // Add incoming class to current fill to modify border radius
+        fillElement.classList.add('has-incoming');
+        
+        // Set incoming height
+        incomingElement.style.height = `${incomingPercentage}%`;
+        incomingElement.style.bottom = `${currentPercentage}%`;
+        
+        // Add value label to the incoming section
+        const incomingValue = document.createElement('div');
+        incomingValue.className = 'cylinder-value';
+        incomingValue.textContent = incoming;
+        incomingElement.appendChild(incomingValue);
+        
+        // Store incoming date for tooltip
+        incomingElement.dataset.incomingDate = formattedIncomingDate;
+        incomingElement.dataset.incomingAmount = incoming;
+        
+        // Add hover events for tooltip
+        incomingElement.addEventListener('mouseenter', function(e) {
+            // Get the container rectangle and adjust for scroll position
+            const rect = containerElement.getBoundingClientRect();
+            
+            // Create tooltip directly above the cylinder
+            const tooltipContent = `
+                <div style="text-align: center;">
+                    <strong>Incoming: ${this.dataset.incomingAmount} units</strong><br>
+                    Expected: ${this.dataset.incomingDate}
+                </div>
+            `;
+            
+            // Position tooltip centered above the cylinder
+            showTooltip(
+                rect.left + (rect.width / 2),  // Center horizontally
+                rect.top - 10,                  // Position above with small offset
+                tooltipContent
+            );
+        });
+        
+        incomingElement.addEventListener('mouseleave', hideTooltip);
+        
+        // Update percentage display to show combined total
+        percentageDisplay.textContent = `${currentPercentage}% + ${incomingPercentage}%`;
+    } else {
+        // Reset incoming element
+        incomingElement.style.height = '0';
+        incomingElement.style.bottom = '0';
+        
+        // Update percentage display
+        percentageDisplay.textContent = `${currentPercentage}%`;
+    }
+    
+    // Update stock display (only used for empty cylinders now)
     stockDisplay.textContent = onHand;
-    
-    // Update percentage display
-    percentageDisplay.textContent = `${percentage}%`;
 }
 
 // Initialize lazy loading of cylinders (keeping this function for compatibility)
@@ -620,8 +723,8 @@ function updateProductTypeFilter(data) {
     // ... existing code ...
 }
 
-// Show tooltip
-function showTooltip(x, y, text) {
+// Function to create and show tooltip
+function showTooltip(x, y, html) {
     let tooltip = document.querySelector('.tooltip');
     if (!tooltip) {
         tooltip = document.createElement('div');
@@ -629,13 +732,37 @@ function showTooltip(x, y, text) {
         document.body.appendChild(tooltip);
     }
     
-    tooltip.textContent = text;
-    tooltip.style.left = `${x}px`;
-    tooltip.style.top = `${y}px`;
+    // Set content
+    tooltip.innerHTML = html;
+    
+    // Make visible but off-screen first to measure dimensions
     tooltip.style.display = 'block';
+    tooltip.style.left = '-9999px';
+    tooltip.style.top = '-9999px';
+    
+    // Get dimensions after content is set
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+    
+    // Calculate position, ensuring the tooltip stays within viewport
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Horizontal positioning - keep within viewport bounds
+    let leftPos = Math.min(
+        viewportWidth - tooltipWidth - 10,  // Right edge with padding
+        Math.max(10, x - (tooltipWidth / 2)) // Left edge with padding
+    );
+    
+    // Vertical positioning - above the element
+    let topPos = Math.max(10, y - tooltipHeight - 10);
+    
+    // Set final position
+    tooltip.style.left = `${leftPos}px`;
+    tooltip.style.top = `${topPos}px`;
 }
 
-// Hide tooltip
+// Function to hide tooltip
 function hideTooltip() {
     const tooltip = document.querySelector('.tooltip');
     if (tooltip) {

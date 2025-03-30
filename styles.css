@@ -1095,4 +1095,142 @@ main {
     .product-grid {
         width: 100%;
     }
+}
+
+/* Cylinder Incoming Section */
+.cylinder-incoming {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 0%; /* Will be set dynamically */
+    background: linear-gradient(to bottom, rgba(66, 165, 245, 0.9), rgba(33, 150, 243, 0.7));
+    border-radius: 8px 8px 0 0;
+    transition: height 0.5s ease, bottom 0.5s ease;
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.5) inset;
+    cursor: pointer;
+}
+
+/* Add shine effect to incoming section */
+.cylinder-incoming::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    border-radius: 8px 8px 0 0;
+}
+
+/* Tooltip for incoming date - Improved styling */
+.tooltip {
+    position: fixed;
+    background-color: rgba(33, 33, 33, 0.95);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    max-width: 220px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+    animation: tooltip-fade-in 0.2s ease-out;
+    transition: opacity 0.2s ease-out;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    margin-left: -8px;
+    border-width: 8px 8px 0;
+    border-style: solid;
+    border-color: rgba(33, 33, 33, 0.95) transparent transparent transparent;
+}
+
+@keyframes tooltip-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhance the cylinder-incoming style to make it more obviously interactive */
+.cylinder-incoming {
+    cursor: pointer;
+    transition: filter 0.2s ease-out, transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.cylinder-incoming:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.7) inset;
+}
+
+/* Adjust cylinder-fill border-radius */
+.cylinder-fill {
+    border-radius: 8px 8px 0 0;
+}
+
+/* When both current and incoming inventory exist, remove top border radius from current */
+.cylinder-fill.has-incoming {
+    border-radius: 0 0 0 0;
+}
+
+/* Incoming Info Badge */
+.incoming-info {
+    margin-bottom: 10px;
+}
+
+.incoming-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: rgba(33, 150, 243, 0.15);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 4px;
+    color: var(--accent-blue);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.incoming-badge svg {
+    margin-right: 5px;
+    color: var(--accent-blue);
+}
+
+/* Number labels inside cylinder sections */
+.cylinder-value {
+    position: absolute;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    z-index: 5;
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+}
+
+.cylinder-fill .cylinder-value {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.cylinder-incoming .cylinder-value {
+    top: 50%;
+    transform: translateY(-50%);
 } 
