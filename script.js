@@ -142,8 +142,12 @@ async function loadInventoryData() {
             filteredData = [...inventoryData];
         }
         
+        // Extract product types from inventory data
+        extractProductTypes();
+        
         // Update product type filter
-        updateProductTypeFilter(inventoryData);
+        populateProductTypeFilter();
+        populateProductTypePills();
         
         // Populate autocomplete data
         uniqueSKUs = new Set(inventoryData.map(item => item.sku));
@@ -173,8 +177,12 @@ async function loadInventoryData() {
                 inventoryData = apiData;
                 filteredData = [...inventoryData];
                 
+                // Extract product types
+                extractProductTypes();
+                
                 // Update product type filter
-                updateProductTypeFilter(inventoryData);
+                populateProductTypeFilter();
+                populateProductTypePills();
                 
                 // Populate autocomplete data
                 uniqueSKUs = new Set(inventoryData.map(item => item.sku));
@@ -197,6 +205,20 @@ async function loadInventoryData() {
         // Show error message
         alert('Error loading inventory data. Please check the console for details and ensure your credentials are set up correctly.');
     }
+}
+
+// Function to extract product types from inventory data
+function extractProductTypes() {
+    uniqueProductTypes.clear();
+    
+    // Extract product types from inventory data
+    inventoryData.forEach(item => {
+        if (item.productType) {
+            uniqueProductTypes.add(item.productType);
+        }
+    });
+    
+    console.log(`Extracted ${uniqueProductTypes.size} unique product types`);
 }
 
 // Process and organize the data from API
@@ -914,8 +936,16 @@ function applyFilters() {
     const productTitle = document.getElementById('productTitleFilter').value.toLowerCase();
     const stockLevel = document.getElementById('stockLevelFilter').value;
     
+    console.log('Applying filters:', {
+        productType,
+        sku, 
+        productTitle,
+        stockLevel,
+        selectedProductTypes: Array.from(selectedProductTypes)
+    });
+    
     filteredData = inventoryData.filter(product => {
-        // Filter by product type (from dropdown)
+        // Filter by product type (from dropdown or pills)
         if (productType && product.productType !== productType) {
             // Check if we should use the pill selection instead
             if (selectedProductTypes.size > 0 && !selectedProductTypes.has(product.productType)) {
@@ -974,6 +1004,7 @@ function applyFilters() {
         return true;
     });
     
+    console.log(`Filtered down to ${filteredData.length} products`);
     updateDashboard();
 }
 
