@@ -1,16 +1,13 @@
 {
-  "name": "inventory-dashboard",
+  "name": "ct-inventory-dashboard",
   "version": "1.0.0",
-  "description": "A beautiful dark-themed inventory dashboard for tracking stock across multiple locations",
+  "description": "Dashboard for CT Inventory",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "update-data": "node .github/scripts/fetch-inventory.js"
   },
   "dependencies": {
-    "googleapis": "^148.0.0"
-  },
-  "engines": {
-    "node": ">=14.0.0"
+    "google-spreadsheet": "^3.3.0"
   }
 }

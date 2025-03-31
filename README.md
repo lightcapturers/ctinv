@@ -54,4 +54,48 @@ node server.js
 
 - Built with HTML, CSS, JavaScript
 - Uses Three.js for 3D visualizations
-- CSV data handling with future Google Sheets API integration 
+- CSV data handling with future Google Sheets API integration
+
+## Setup Instructions
+
+### 1. Set Up GitHub Secrets
+
+For the automated data fetching to work, you need to add three secrets to your GitHub repository:
+
+1. Go to your GitHub repository → Settings → Secrets and variables → Actions
+2. Add three repository secrets:
+   - `GOOGLE_CREDENTIALS`: Paste the entire content of your credentials.json file
+   - `SHEET_ID`: Your Google Sheet ID (from the URL of your sheet)
+   - `SHEET_NAME`: The name of the specific sheet/tab in your Google Spreadsheet (e.g., "Inventory")
+
+### 2. Enable GitHub Pages
+
+1. Go to your GitHub repository → Settings → Pages
+2. Set source to "Deploy from a branch"
+3. Select "main" branch and "/" (root) folder
+4. Click "Save"
+
+### 3. Run the Workflow Manually (Optional)
+
+1. Go to your GitHub repository → Actions → "Update Inventory Data" workflow
+2. Click "Run workflow" to manually fetch data the first time
+
+## How It Works
+
+1. GitHub Actions runs every 2 hours to fetch inventory data from Google Sheets
+2. The data is saved as a static JSON file in the `data` directory
+3. Your dashboard loads this JSON file to display the inventory information
+
+## Updating Inventory Data
+
+Simply update your Google Sheet, and within 2 hours the changes will automatically appear on the dashboard.
+
+## Local Development
+
+1. Clone the repository
+2. Open index.html in your browser
+3. For local data updates, run the fetch script manually:
+   ```
+   npm install google-spreadsheet
+   GOOGLE_CREDENTIALS='...' SHEET_ID='your-sheet-id' SHEET_NAME='Your Sheet Name' node .github/scripts/fetch-inventory.js
+   ``` 

@@ -85,29 +85,46 @@ function handleWindowResize() {
     // Additional responsive adjustments can be added here if needed
 }
 
-// Load inventory data from API
+// Function to load inventory data
 async function loadInventoryData() {
     try {
         // Show loading indicator
-        document.getElementById('productGrid').innerHTML = '<div class="loading">Loading inventory data...</div>';
+        document.body.classList.add('loading');
         
-        const response = await fetch(API_ENDPOINT);
+        // Fetch data from our static JSON file
+        const response = await fetch('./data/inventory.json');
         
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error('Failed to fetch inventory data');
         }
         
+        // Parse the JSON response
         const data = await response.json();
-        processData(data);
         
-        // Initialize the dashboard
+        // Process the data
+        inventoryData = data;
+        filteredData = [...inventoryData];
+        
+        // Update product type filter
+        updateProductTypeFilter(inventoryData);
+        
+        // Populate autocomplete data
+        uniqueSKUs = new Set(inventoryData.map(item => item.sku));
+        uniqueProductTitles = new Set(inventoryData.map(item => item.productTitle));
+        
+        // Update the dashboard
         updateDashboard();
         
-        console.log('Data loaded successfully from Google Sheets');
+        // Hide loading indicator
+        document.body.classList.remove('loading');
     } catch (error) {
         console.error('Error loading inventory data:', error);
-        document.getElementById('productGrid').innerHTML = 
-            `<div class="error-message">Error loading data. Please try again later.<br>${error.message}</div>`;
+        
+        // Hide loading indicator
+        document.body.classList.remove('loading');
+        
+        // Show error message
+        alert('Error loading inventory data. Please try again later.');
     }
 }
 
