@@ -8,6 +8,8 @@ on:
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # This ensures the workflow has permission to push changes
     steps:
       - uses: actions/checkout@v3
       
@@ -18,6 +20,9 @@ jobs:
           
       - name: Install dependencies
         run: npm install googleapis dotenv
+        
+      - name: Check current date (for debugging)
+        run: date
         
       - name: Create fix-inventory.js script
         run: |
@@ -165,10 +170,17 @@ jobs:
                 fs.mkdirSync(dataDir);
               }
               
+              // Add a timestamp to make sure the file always changes
+              const outputData = {
+                lastUpdated: new Date().toISOString(),
+                inventoryCount: inventoryData.length,
+                data: inventoryData
+              };
+              
               // Write the data to inventory.json
               fs.writeFileSync(
                 path.join(dataDir, 'inventory.json'),
-                JSON.stringify(inventoryData, null, 2)
+                JSON.stringify(outputData, null, 2)
               );
               
               console.log(`Successfully created inventory.json with ${inventoryData.length} products!`);
@@ -181,6 +193,12 @@ jobs:
           // Run the function
           fixInventoryData();
           EOL
+      
+      - name: Debug environment
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory listing:"
+          ls -la
           
       - name: Fetch inventory data
         run: node fix-inventory.js
@@ -189,10 +207,60 @@ jobs:
           SHEET_ID: ${{ secrets.SHEET_ID }}
           SHEET_NAME: ${{ secrets.SHEET_NAME }}
           
+      - name: Check if data directory exists
+        run: |
+          if [ -d "data" ]; then
+            echo "Data directory exists"
+            ls -la data/
+          else
+            echo "Data directory does not exist"
+            mkdir -p data
+            echo "Created data directory"
+          fi
+          
+      - name: Update script.js to handle new data format
+        run: |
+          cat > script.js.patch << 'EOL'
+          --- script.js
+          +++ script.js
+          @@ -100,7 +100,13 @@
+                 }
+                 
+                 // Parse the JSON response
+          -        const data = await response.json();
+          +        let data = await response.json();
+          +        
+          +        // Check if data is in the new format (with lastUpdated field)
+          +        if (data.lastUpdated && Array.isArray(data.data)) {
+          +            console.log(`Loading inventory data updated at ${data.lastUpdated}`);
+          +            data = data.data;
+          +        }
+                 
+                 // If local data is empty (empty array), try the API endpoint
+                 if (Array.isArray(data) && data.length === 0) {
+          EOL
+          
+          # Apply the patch if script.js exists
+          if [ -f "script.js" ]; then
+            patch -p0 < script.js.patch || echo "Patch failed but continuing"
+          fi
+          
       - name: Commit and push if changed
         run: |
+          # Always create a change by updating a timestamp file
+          echo "Last updated: $(date)" > data/last_updated.txt
+          
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git add data/inventory.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update inventory data"
+          git add data/
+          git add script.js
+          
+          # Commit with -m flag and --allow-empty to ensure a commit even if only timestamps changed
+          git commit -m "Update inventory data - $(date)" --allow-empty
+          
+          # Debug info
+          echo "Git status after commit:"
+          git status
+          
+          # Push changes
           git push 

@@ -99,7 +99,13 @@ async function loadInventoryData() {
         }
         
         // Parse the JSON response
-        const data = await response.json();
+        let data = await response.json();
+        
+        // Check if data is in the new format (with lastUpdated field)
+        if (data.lastUpdated && Array.isArray(data.data)) {
+            console.log(`Loading inventory data updated at ${data.lastUpdated}`);
+            data = data.data;
+        }
         
         // If local data is empty (empty array), try the API endpoint
         if (Array.isArray(data) && data.length === 0) {
