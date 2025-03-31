@@ -91,19 +91,50 @@ async function loadInventoryData() {
         // Show loading indicator
         document.body.classList.add('loading');
         
-        // Fetch data from our static JSON file
+        // First try to fetch data from our static JSON file
         const response = await fetch('./data/inventory.json');
         
         if (!response.ok) {
-            throw new Error('Failed to fetch inventory data');
+            throw new Error('Failed to fetch local inventory data');
         }
         
         // Parse the JSON response
         const data = await response.json();
         
-        // Process the data
-        inventoryData = data;
-        filteredData = [...inventoryData];
+        // If local data is empty (empty array), try the API endpoint
+        if (Array.isArray(data) && data.length === 0) {
+            console.log('Local inventory data is empty, trying API endpoint...');
+            
+            // Try fetching from API
+            try {
+                const apiResponse = await fetch(API_ENDPOINT);
+                
+                if (!apiResponse.ok) {
+                    throw new Error('Failed to fetch inventory data from API');
+                }
+                
+                const apiData = await apiResponse.json();
+                
+                if (Array.isArray(apiData) && apiData.length > 0) {
+                    console.log(`Successfully loaded ${apiData.length} items from API`);
+                    inventoryData = apiData;
+                    filteredData = [...inventoryData];
+                } else {
+                    console.warn('API returned empty data');
+                    inventoryData = [];
+                    filteredData = [];
+                }
+            } catch (apiError) {
+                console.error('Error loading from API:', apiError);
+                inventoryData = [];
+                filteredData = [];
+            }
+        } else {
+            // Process the data from JSON file
+            console.log(`Successfully loaded ${data.length} items from local file`);
+            inventoryData = data;
+            filteredData = [...inventoryData];
+        }
         
         // Update product type filter
         updateProductTypeFilter(inventoryData);
@@ -120,11 +151,45 @@ async function loadInventoryData() {
     } catch (error) {
         console.error('Error loading inventory data:', error);
         
+        // Try API as fallback
+        try {
+            console.log('Trying API endpoint as fallback...');
+            const apiResponse = await fetch(API_ENDPOINT);
+            
+            if (!apiResponse.ok) {
+                throw new Error('Failed to fetch from API');
+            }
+            
+            const apiData = await apiResponse.json();
+            
+            if (Array.isArray(apiData) && apiData.length > 0) {
+                console.log(`Successfully loaded ${apiData.length} items from API`);
+                inventoryData = apiData;
+                filteredData = [...inventoryData];
+                
+                // Update product type filter
+                updateProductTypeFilter(inventoryData);
+                
+                // Populate autocomplete data
+                uniqueSKUs = new Set(inventoryData.map(item => item.sku));
+                uniqueProductTitles = new Set(inventoryData.map(item => item.productTitle));
+                
+                // Update the dashboard
+                updateDashboard();
+                
+                // Hide loading indicator
+                document.body.classList.remove('loading');
+                return;
+            }
+        } catch (apiError) {
+            console.error('Error fallback to API:', apiError);
+        }
+        
         // Hide loading indicator
         document.body.classList.remove('loading');
         
         // Show error message
-        alert('Error loading inventory data. Please try again later.');
+        alert('Error loading inventory data. Please check the console for details and ensure your credentials are set up correctly.');
     }
 }
 

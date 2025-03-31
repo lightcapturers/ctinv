@@ -14,7 +14,23 @@ const SHEET_NAME = 'Shift Knobs';
  */
 async function authorize() {
   try {
-    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+    let credentials;
+    
+    // Try to read credentials from file first
+    if (fs.existsSync(CREDENTIALS_PATH)) {
+      credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
+      console.log('Using credentials from credentials.json file');
+    } 
+    // Fall back to environment variable if file doesn't exist
+    else if (process.env.GOOGLE_CREDENTIALS) {
+      credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+      console.log('Using credentials from environment variable');
+    }
+    // No credentials found
+    else {
+      throw new Error('No credentials found. Please provide credentials.json file or set GOOGLE_CREDENTIALS environment variable.');
+    }
+    
     const auth = new google.auth.JWT(
       credentials.client_email,
       null,

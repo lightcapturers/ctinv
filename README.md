@@ -92,10 +92,23 @@ Simply update your Google Sheet, and within 2 hours the changes will automatical
 
 ## Local Development
 
-1. Clone the repository
-2. Open index.html in your browser
-3. For local data updates, run the fetch script manually:
+To set up the application for local development:
+
+1. Make sure the `.env` file contains your Google Sheet API credentials in the `GOOGLE_CREDENTIALS` variable
+2. Run the setup script to create a local credentials file:
    ```
-   npm install google-spreadsheet
-   GOOGLE_CREDENTIALS='...' SHEET_ID='your-sheet-id' SHEET_NAME='Your Sheet Name' node .github/scripts/fetch-inventory.js
-   ``` 
+   npm run setup
+   ```
+3. Start the server:
+   ```
+   npm start
+   ```
+4. Open your browser and navigate to `http://localhost:3001`
+
+### Troubleshooting
+
+If you encounter issues with access to inventory data:
+
+1. Check that your `.env` file contains valid Google credentials in the `GOOGLE_CREDENTIALS` variable
+2. Run `npm run setup` to recreate your credentials.json file
+3. Verify that your Google service account has access to the spreadsheet 
