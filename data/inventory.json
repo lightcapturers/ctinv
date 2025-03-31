@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-03-31T00:31:03.497Z",
+  "lastUpdated": "2025-03-31T00:41:44.733Z",
   "inventoryCount": 115,
   "data": [
     {
@@ -2221,8 +2221,8 @@
           "locationId": "gid://shopify/Location/68455891180",
           "onHand": -1,
           "threshold": 10,
-          "incoming": 0,
-          "incomingDate": ""
+          "incoming": 10,
+          "incomingDate": "5/16/2025"
         },
         {
           "locationId": "gid://shopify/Location/71820017900",
